@@ -1,0 +1,3 @@
+[submodule "bitnodes"]
+	path = bitnodes
+	url = git@github.com:yutelin/bitnodes.git

@@ -7,6 +7,8 @@ import json
 from models import Node
 import ConfigParser
 import os
+from constants import FILENAME_STATE_CFG, STR_LAST_NODE_TIMESTAMP, STR_TIMESTAMP,\
+    STR_NODE
 
 class NodePusher(object):
     '''
@@ -43,16 +45,16 @@ class NodePusher(object):
         result = 0
         #1. Load state config
         file_dir = os.path.dirname(os.path.realpath(__file__))
-        state_config_file = os.path.join(file_dir, "state.cfg")
+        state_config_file = os.path.join(file_dir, FILENAME_STATE_CFG)
         if os.path.isfile(state_config_file):
             config = ConfigParser.ConfigParser()
             config.read(state_config_file)
-            result = config.get('node', 'last_node_timestamp')
+            result = config.get(STR_NODE, STR_LAST_NODE_TIMESTAMP)
         return int(result)
     
     def __update_last_node_timestamp__(self, timestamp):
         file_dir = os.path.dirname(os.path.realpath(__file__))
-        state_config_file = os.path.join(file_dir, "state.cfg")
+        state_config_file = os.path.join(file_dir, FILENAME_STATE_CFG)
         config = ConfigParser.ConfigParser()
         #1. Try to read the config file
         try:
@@ -60,9 +62,9 @@ class NodePusher(object):
         except:
             pass
         #2. Add section if not appeared
-        if not config.has_section("node"): config.add_section("node")
+        if not config.has_section(STR_NODE): config.add_section(STR_NODE)
         #3. Update timestamp value
-        config.set('node', 'last_node_timestamp', timestamp)
+        config.set(STR_NODE, STR_LAST_NODE_TIMESTAMP, timestamp)
         with open(state_config_file, 'w') as configfile:
             config.write(configfile)
             
@@ -72,7 +74,7 @@ class NodePusher(object):
         print "Upload nodes modified after:", last_node_timestamp
         
         # 2. filter old nodes
-        nodes = [node for node in nodes if node['timestamp'] > last_node_timestamp]
+        nodes = [node for node in nodes if node[STR_TIMESTAMP] > last_node_timestamp]
         print "To upload nodes: "
         print json.dumps(nodes, indent=4)
         
@@ -80,7 +82,7 @@ class NodePusher(object):
         new_last_node_timestamp = 0
         add_count = 0
         for node in nodes:
-            m_node = Node(ip_address=node["node"], timestamp=node["timestamp"])
+            m_node = Node(ip_address=node[STR_NODE], timestamp=node[STR_TIMESTAMP])
             self.session.add(m_node)
             add_count = add_count + 1
             if m_node.timestamp > new_last_node_timestamp : new_last_node_timestamp = m_node.timestamp 

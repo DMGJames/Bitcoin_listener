@@ -11,3 +11,5 @@ staticfiles
 # Runtime data
 state.cfg
 
+# GeoIp data
+geoip/*.dat
