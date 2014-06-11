@@ -12,7 +12,7 @@
 `sh bitnodes/geoip/update.sh`
 
 ### Auto generate miration script
-`alembic revision --autogenerate -m "Create node table"`
+`alembic revision --autogenerate -m "[MESSAGE]"`
 
 
 ### Migration
@@ -31,5 +31,15 @@ node_resolver.__get_raw_geoip__('54.255.25.194')
 node_resolver.__get_raw_hostname__('54.255.25.194')
 node_resolver.__get_bitcoin_node_info__('86.89.42.107', 8333)
 node_resolver.get_node_info('86.89.42.107', 8333)
+```
+
+#### Test `__split_address_and_port__`
+```
+python
+from node_pusher import NodePusher
+pusher = NodePusher(None)
+pusher.__split_address_and_port__('134.43.3.4:1344')
+pusher.__split_address_and_port__('134.43:3:4:1344')
+pusher.__split_address_and_port__('134.43.3.4')
 ```
 

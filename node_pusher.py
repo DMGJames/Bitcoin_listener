@@ -8,7 +8,10 @@ from models import Node
 import ConfigParser
 import os
 from constants import FILENAME_STATE_CFG, STR_LAST_NODE_TIMESTAMP, STR_TIMESTAMP,\
-    STR_NODE
+    STR_NODE, STR_COUNTRY, STR_HOSTNAME, STR_LATITUDE, STR_LONGITUDE,\
+    STR_START_HEIGHT, STR_TIME_ZONE, STR_USER_AGENT, STR_VERSION, STR_ASN,\
+    STR_ORG, STR_CITY
+import node_resolver
 
 class NodePusher(object):
     '''
@@ -67,6 +70,16 @@ class NodePusher(object):
         config.set(STR_NODE, STR_LAST_NODE_TIMESTAMP, timestamp)
         with open(state_config_file, 'w') as configfile:
             config.write(configfile)
+        
+    def __split_address_and_port__(self, address):
+        ip = None
+        port = None
+        if address and address.rfind(':') > 0:
+            ip = address [:address.rfind(':')]
+            port = int(address[address.rfind(':')+1:])
+        else :
+            ip = address
+        return (ip, port)
             
     def __update_db_with_nodes__(self, nodes = []):     
         # 1. Get last timestamp from DB
@@ -82,8 +95,25 @@ class NodePusher(object):
         new_last_node_timestamp = 0
         add_count = 0
         for node in nodes:
-            m_node = Node(ip_address=node[STR_NODE], timestamp=node[STR_TIMESTAMP])
-            self.session.add(m_node)
+            ip_address, port = self.__split_address_and_port__(node[STR_NODE])
+            node_data = node_resolver.get_node_info(address = ip_address, port = port)
+            m_node = Node(ip_address            = ip_address,
+                          port                  = port,  
+                          timestamp             = node[STR_TIMESTAMP],
+                          asn                   = node_data[STR_ASN],
+                          city                  = node_data[STR_CITY],
+                          country               = node_data[STR_COUNTRY],
+                          hostname              = node_data[STR_HOSTNAME],
+                          latitude              = node_data[STR_LATITUDE],
+                          longitude             = node_data[STR_LONGITUDE],
+                          org                   = node_data[STR_ORG],       
+                          start_height          = node_data[STR_START_HEIGHT],
+                          time_zone             = node_data[STR_TIME_ZONE],
+                          user_agent            = node_data[STR_USER_AGENT], 
+                          version               = node_data[STR_VERSION])
+            #self.session.add(m_node)
+            # print m_node.__dict__
+            self.session.merge(m_node)
             add_count = add_count + 1
             if m_node.timestamp > new_last_node_timestamp : new_last_node_timestamp = m_node.timestamp 
         self.session.commit()
