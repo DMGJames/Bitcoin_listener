@@ -7,6 +7,27 @@
 
 `sh geoip/update.sh`
 
+Install redis:
+
+```
+cd; wget http://download.redis.io/releases/redis-2.8.9.tar.gz
+tar xzf redis-2.8.9.tar.gz; cd redis-2.8.9; make; make test
+sudo make install
+```
+Update conf:
+
+```
+sudo vi /etc/redis/6379.conf
+#### Append the following
+aof-rewrite-incremental-fsync yes
+requirepass teammaicoin
+maxclients 50000
+maxmemory 32212254720
+maxmemory-policy volatile-ttl
+appendfsync no
+activerehashing no
+hz 30
+```
 
 ### Update Geo database
 `sh bitnodes/geoip/update.sh`
@@ -20,8 +41,11 @@
 
 
 ### Run Test
-#### Test uploading nodes
+#### Test uploading nodes via file
 `python main.py -n test/nodes_test.txt`
+
+#### Test uploading nodes via redis discovered_nodes
+`python main.py -n=`
 
 #### Test node_resolver.py
 ```
@@ -43,3 +67,5 @@ pusher.__split_address_and_port__('134.43:3:4:1344')
 pusher.__split_address_and_port__('134.43.3.4')
 ```
 
+#### Test node loader
+`python node_loader.py`

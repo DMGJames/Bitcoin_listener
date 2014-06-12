@@ -10,6 +10,7 @@ from node_pusher import NodePusher
 import ConfigParser
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
+import node_loader
 
 
 def set_env():
@@ -49,8 +50,14 @@ def get_opt(argv):
     return inputfile
    
 def update_db_nodes(node_file, session):
-    node_pusher = NodePusher(session=session)
-    node_pusher.update_db_nodes(file_path = node_file)
+    if os.path.exists(node_file):
+        node_pusher = NodePusher(session=session)
+        node_pusher.update_db_nodes(file_path = node_file)
+    else :
+        node_pusher = NodePusher(session=session)
+        node_loader.load_and_push_nodes(node_pusher = node_pusher)
+#         node_ips = node_loader.load_nodes()
+#         node_pusher.update_db_nodes_with_node_ips(node_ips = node_ips)
    
 if __name__ == '__main__':
     set_env()
