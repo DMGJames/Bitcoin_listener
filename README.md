@@ -55,7 +55,7 @@ hz 30
 `python main.py -n test/nodes_test.txt -e prod`
 
 #### Test uploading nodes via redis discovered_nodes
-`python main.py -n=`
+`	`
 `python main.py -n= -e test >> pusher.log 2>&1 &`
 `python main.py -n= -e prod`
 

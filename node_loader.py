@@ -5,9 +5,15 @@ Created on Jun 12, 2014
 '''
 import redis
 from constants import STR_DISCOVERED_NODES, NODE_LOADING_BATCH_SIZE,\
-    STR_NODE_DISCOVERED, STR_CHANNEL, STR_TYPE, STR_MESSAGE
-redis_connection =  redis.StrictRedis(password='teammaicoin')
+    STR_NODE_DISCOVERED, STR_CHANNEL, STR_TYPE, STR_MESSAGE, RESOLVING_POOL_SIZE
+import threadpool
+import time
+try:
+    redis_connection =  redis.StrictRedis()
+except:
+    redis_connection =  redis.StrictRedis(password='teammaicoin')
 
+pool = threadpool.ThreadPool(RESOLVING_POOL_SIZE)
 def load_nodes():
     count = 0
     result = []
@@ -20,7 +26,12 @@ def load_nodes():
 def __load_and_push_nodes_in_redis__(node_pusher):
     node_ips = load_nodes()
     while len(node_ips) > 0:
-        node_pusher.update_db_nodes_with_node_ips(node_ips = node_ips)
+        #print "workers: queue size ==>",len(pool.workers), pool._requests_queue.qsize() 
+        while pool._requests_queue.qsize() > len(pool.workers) :
+            time.sleep(0.5)
+        requests = threadpool.makeRequests(node_pusher.update_db_nodes_with_node_ips, [node_ips])
+        for req in requests: pool.putRequest(req)
+        #node_pusher.update_db_nodes_with_node_ips(node_ips = node_ips)
         node_ips = load_nodes()
 
 def load_and_push_nodes(node_pusher):

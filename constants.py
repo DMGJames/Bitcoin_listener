@@ -34,5 +34,5 @@ FILENAME_GEO_CITY_V6        = "geoip/GeoLiteCityv6.dat"
 FILENAME_GEO_ASN            = "geoip/GeoIPASNum.dat"
 FILENAME_GEO_ASN_V6         = "geoip/GeoIPASNumv6.dat" 
 
-NODE_LOADING_BATCH_SIZE     = 50
-RESOLVING_POOL_SIZE         = 50
+NODE_LOADING_BATCH_SIZE     = 5
+RESOLVING_POOL_SIZE         = 200

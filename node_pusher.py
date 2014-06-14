@@ -10,15 +10,12 @@ import os
 from constants import FILENAME_STATE_CFG, STR_LAST_NODE_TIMESTAMP, STR_TIMESTAMP,\
     STR_NODE, STR_COUNTRY, STR_HOSTNAME, STR_LATITUDE, STR_LONGITUDE,\
     STR_START_HEIGHT, STR_TIME_ZONE, STR_USER_AGENT, STR_VERSION, STR_ASN,\
-    STR_ORG, STR_CITY, STR_NODE_DATA, STR_IP_ADDRESS, STR_PORT,\
-    RESOLVING_POOL_SIZE
+    STR_ORG, STR_CITY, STR_NODE_DATA, STR_IP_ADDRESS, STR_PORT
 import node_resolver
-# import gevent
-# from gevent.pool import Pool
 import math
 import time
-import threadpool
-
+import gevent
+import threading
 class NodePusher(object):
     '''
     classdocs
@@ -28,6 +25,7 @@ class NodePusher(object):
         '''
         Constructor
         '''
+        self.lock = threading.Lock()
         self.session = session
         
     def update_db_nodes(self, file_path):
@@ -112,18 +110,20 @@ class NodePusher(object):
         print json.dumps(nodes, indent=4)
         
         # 3. Download node data
-#         workers = [gevent.spawn(self.__set_node_data__, node) for node in nodes]
-#         gevent.joinall(workers)
+        workers = [gevent.spawn(self.__set_node_data__, node) for node in nodes]
+        gevent.joinall(workers)
 
-        pool = threadpool.ThreadPool(RESOLVING_POOL_SIZE)
-        requests = threadpool.makeRequests(self.__set_node_data__, nodes)
-        for req in requests:
-            pool.putRequest(req)
-        pool.wait()
+#         for node in nodes: self.__set_node_data__(node)
+#         pool = threadpool.ThreadPool(RESOLVING_POOL_SIZE)
+#         requests = threadpool.makeRequests(self.__set_node_data__, nodes)
+#         for req in requests:
+#             pool.putRequest(req)
+#         pool.wait()
 
         # 4. Update db with nodes
         new_last_node_timestamp = 0
         add_count = 0
+        self.lock.acquire(True)
         for node in nodes:
             node_data = node.get(STR_NODE_DATA, {})
             if node.get(STR_IP_ADDRESS): 
@@ -147,6 +147,7 @@ class NodePusher(object):
                 add_count = add_count + 1
                 if m_node.timestamp > new_last_node_timestamp : new_last_node_timestamp = m_node.timestamp 
         self.session.commit()
+        self.lock.release()
         
         # 5. Update new last node timestamp
         if add_count > 0 : 
