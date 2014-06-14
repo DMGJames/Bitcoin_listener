@@ -1,11 +1,14 @@
 ### Setup Environment 
-`virtualenv venv --distribute`
 
-`source venv/bin/activate`
-
-`pip install -r requirements.txt`
-
-`sh geoip/update.sh`
+```
+sudo apt-get install python-pip
+sudo apt-get install python-mysqldb
+sudo apt-get install libmysqlclient-dev
+virtualenv venv --distribute
+source venv/bin/activate
+sudo pip install -r requirement.txt
+sh geoip/update.sh
+```
 
 Install redis:
 
@@ -37,15 +40,25 @@ hz 30
 
 
 ### Migration
-`alembic upgrade head`
+#### Local
+`alembic -c alembic_local.ini upgrade head`
+#### Test server
+`alembic -c alembic_test.ini upgrade head`
+#### Prod server
+`alembic -c alembic_prod.ini upgrade head`
 
 
 ### Run Test
 #### Test uploading nodes via file
-`python main.py -n test/nodes_test.txt`
+`python main.py -n test/nodes_test.txt -e local`
+`python main.py -n test/nodes_test.txt -e test`
+`python main.py -n test/nodes_test.txt -e prod`
 
 #### Test uploading nodes via redis discovered_nodes
 `python main.py -n=`
+`python main.py -n= -e test >> pusher.log 2>&1 &`
+`python main.py -n= -e prod`
+
 
 #### Test node_resolver.py
 ```
@@ -69,3 +82,36 @@ pusher.__split_address_and_port__('134.43.3.4')
 
 #### Test node loader
 `python node_loader.py`
+
+### Install bitcoind
+git, build....
+
+Add the following in sudo vi /etc/init/bitcoind.conf
+
+```
+description "bitcoind"
+
+start on filesystem
+stop on runlevel [!2345]
+oom never
+expect daemon
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+user=ubuntu
+home=/home/$user
+cmd=/home/$user/listener/src/bitcoind
+pidfile=$home/.bitcoin/bitcoind.pid
+###### Don't change anything below here unless you know what you're doing
+[[ -e $pidfile && ! -d "/proc/$(cat $pidfile)" ]] && rm $pidfile
+[[ -e $pidfile && "$(cat /proc/$(cat $pidfile)/cmdline)" != $cmd* ]] && rm $pidfile
+exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m --startas $cmd -- -daemon
+end script
+```
+
+Reload: `sudo initctl reload-configuration.`
+
+Start: `sudo start bitcoind`. 
+
+Stop: `sudo stop bitcoind`.

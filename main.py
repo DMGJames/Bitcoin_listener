@@ -12,6 +12,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import node_loader
 
+env_setting = "local"
 
 def set_env():
     #1. Append current file directory as path
@@ -21,7 +22,8 @@ def set_env():
 def set_session():    
     #2. Load db config
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    db_config_file = os.path.join(file_dir, "alembic.ini")
+    file_name = "alembic_%s.ini" % env_setting
+    db_config_file = os.path.join(file_dir, file_name)
     config = ConfigParser.ConfigParser()
     config.read(db_config_file)
     
@@ -35,19 +37,22 @@ def set_session():
     return session()
     
 def get_opt(argv):
-    inputfile = ''   
+    inputfile = '' 
+    env = 'local'  
     try:
-        opts, _ = getopt.getopt(argv,"hn:",["ifile="])
+        opts, _ = getopt.getopt(argv,"hn:e:",["ifile="])
     except getopt.GetoptError:
-        print 'main.py -n <nodefile> '
+        print 'main.py -n <nodefile> -e local|prod|test '
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'main.py -n <nodefile> '
+            print 'main.py -n <nodefile> -e local|prod|test'
             sys.exit()
         elif opt in ("-n"):
             inputfile = arg
-    return inputfile
+        elif opt in ("-e") and arg in ['prod', 'test', 'local']:
+            env = arg
+    return inputfile, env
    
 def update_db_nodes(node_file, session):
     if os.path.exists(node_file):
@@ -61,7 +66,8 @@ def update_db_nodes(node_file, session):
    
 if __name__ == '__main__':
     set_env()
-    node_file = get_opt(sys.argv[1:])
+    (node_file, env) = get_opt(sys.argv[1:])
+    env_setting = env
     session = set_session()
     update_db_nodes(node_file = node_file, session = session)
     session.close()

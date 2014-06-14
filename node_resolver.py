@@ -81,9 +81,10 @@ def __get_bitcoin_node_info__(address, port):
     try:
         connection.open()
         handshake_msgs = connection.handshake()
-        user_agent = handshake_msgs[0].get(STR_USER_AGENT)
-        version =  handshake_msgs[0].get(STR_VERSION)
-        start_height = handshake_msgs[0].get(STR_START_HEIGHT) 
+        if handshake_msgs and len(handshake_msgs) > 1:
+            user_agent = handshake_msgs[0].get(STR_USER_AGENT)
+            version =  handshake_msgs[0].get(STR_VERSION)
+            start_height = handshake_msgs[0].get(STR_START_HEIGHT) 
     except (ProtocolError, socket.error) as err:
         logging.debug("Closing {} ({})".format(connection.to_addr, err))
         connection.close()
