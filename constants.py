@@ -3,6 +3,7 @@ Created on Jun 11, 2014
 
 @author: yutelin
 '''
+import os
 
 STR_TIMESTAMP               = 'timestamp'
 STR_LAST_NODE_TIMESTAMP     = 'last_node_timestamp'
@@ -36,3 +37,10 @@ FILENAME_GEO_ASN_V6         = "geoip/GeoIPASNumv6.dat"
 
 NODE_LOADING_BATCH_SIZE     = 5
 RESOLVING_POOL_SIZE         = 200
+
+
+NODE_PUSHER_DAEMON_PID_FILE = '/tmp/node-pusher-daemon.pid'
+file_dir = os.path.dirname(os.path.realpath(__file__))
+NODE_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/node_pusher')
+NODE_PUSHER_DAEMON_STDOUT = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher.log')
+NODE_PUSHER_DAEMON_STDERR = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher-err.log')

@@ -13,3 +13,7 @@ state.cfg
 
 # GeoIp data
 geoip/*.dat
+
+# Log
+log/*
+*.log

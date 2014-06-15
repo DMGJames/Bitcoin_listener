@@ -12,11 +12,13 @@ from constants import STR_COUNTRY_CODE, STR_LATITUDE, STR_LONGITUDE,\
 import socket
 import logging
 from bitnodes.protocol import Connection, ProtocolError
+import os
+file_dir = os.path.dirname(os.path.realpath(__file__))
 
-GEOIP4 = pygeoip.GeoIP(FILENAME_GEO_CITY, pygeoip.MMAP_CACHE)
-GEOIP6 = pygeoip.GeoIP(FILENAME_GEO_CITY_V6, pygeoip.MMAP_CACHE)
-ASN4 = pygeoip.GeoIP(FILENAME_GEO_ASN, pygeoip.MMAP_CACHE)
-ASN6 = pygeoip.GeoIP(FILENAME_GEO_ASN_V6, pygeoip.MMAP_CACHE)
+GEOIP4 = pygeoip.GeoIP(os.path.join(file_dir, FILENAME_GEO_CITY), pygeoip.MMAP_CACHE)
+GEOIP6 = pygeoip.GeoIP(os.path.join(file_dir, FILENAME_GEO_CITY_V6), pygeoip.MMAP_CACHE)
+ASN4 = pygeoip.GeoIP(os.path.join(file_dir, FILENAME_GEO_ASN), pygeoip.MMAP_CACHE)
+ASN6 = pygeoip.GeoIP(os.path.join(file_dir, FILENAME_GEO_ASN_V6), pygeoip.MMAP_CACHE)
 
 def __get_raw_geoip__(address):
     """
