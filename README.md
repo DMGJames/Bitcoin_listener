@@ -41,14 +41,14 @@ hz 30
 `sh bitnodes/geoip/update.sh`
 
 ### Auto generate miration script (shound be run on your own dev machine)
-`alembic revision --autogenerate -m "[MESSAGE]"`
+`alembic -c ./alembic_local.ini revision  --autogenerate -m "[MESSAGE]"`
 
 
 ### Migration
 #### Local
-`alembic -c alembic_local.ini upgrade head`
+`alembic -c ./alembic_local.ini upgrade head`
 #### Test server
-`alembic -c alembic_test.ini upgrade head`
+`alembic -c ./alembic_test.ini upgrade head`
 #### Prod server
 `alembic -c alembic_prod.ini upgrade head`
 
@@ -91,6 +91,9 @@ pusher.__split_address_and_port__('134.43.3.4')
 
 #### Test node loader
 `python node_loader.py`
+
+#### Test node pinger
+`python node_pinger.py local|test|prod`
 
 ### Install bitcoind
 git, build....

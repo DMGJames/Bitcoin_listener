@@ -28,6 +28,9 @@ STR_NODE_DISCOVERED         = "node_discovered"
 STR_CHANNEL                 = "channel"
 STR_TYPE                    = "type"
 STR_MESSAGE                 = "message"
+STR_ACTIVE                  = "active"
+STR_INACTIVE                = "inactive"
+STR_STATUS                  = "status"
 
 FILENAME_STATE_CFG          = 'state.cfg'
 FILENAME_GEO_CITY           = "geoip/GeoLiteCity.dat"
@@ -37,6 +40,7 @@ FILENAME_GEO_ASN_V6         = "geoip/GeoIPASNumv6.dat"
 
 NODE_LOADING_BATCH_SIZE     = 5
 RESOLVING_POOL_SIZE         = 200
+PINGER_POOL_SIZE            = 2
 
 
 NODE_PUSHER_DAEMON_PID_FILE = '/tmp/node-pusher-daemon.pid'

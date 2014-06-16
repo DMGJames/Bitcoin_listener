@@ -26,3 +26,10 @@ class Node(Base):
     created_at      = Column(DateTime, default=func.now())    
     updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
     
+class NodeActivity(Base):
+    __tablename__   = 'node_activity'
+    id              = Column(Integer, primary_key=True)
+    ip_address      = Column(String(250), index=True)
+    status          = Column(String(250), index=True)
+    created_at      = Column(DateTime, default=func.now(),index=True)
+    
