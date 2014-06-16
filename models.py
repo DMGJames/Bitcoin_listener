@@ -9,7 +9,8 @@ Base = declarative_base()
 class Node(Base):
     __tablename__   = 'node'
     #id              = Column(Integer, primary_key=True)
-    ip_address      = Column(String(250),primary_key=True)
+    address         = Column(String(250),primary_key=True) # ip_address + port
+    ip_address      = Column(String(250),nullable=False, index=True)
     timestamp       = Column(BigInteger, nullable=False, index=True)
     port            = Column(Integer,  nullable=False)
     city            = Column(String(250), index=True)

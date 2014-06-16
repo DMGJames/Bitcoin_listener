@@ -97,7 +97,7 @@ class NodePusher(object):
         node[STR_NODE_DATA] = node_data
         node[STR_IP_ADDRESS] = ip_address
         node[STR_PORT] = port
-        print "done: ", ip_address, port, node_data
+        print "done: ", ip_address, port, node
         
     def __update_db_with_nodes__(self, nodes = []):     
         # 1. Get last timestamp from DB
@@ -127,7 +127,8 @@ class NodePusher(object):
         for node in nodes:
             node_data = node.get(STR_NODE_DATA, {})
             if node.get(STR_IP_ADDRESS): 
-                m_node = Node(ip_address            = node.get(STR_IP_ADDRESS),
+                m_node = Node(address               = node.get(STR_NODE),
+                              ip_address            = node.get(STR_IP_ADDRESS),
                               port                  = node.get(STR_PORT),  
                               timestamp             = node.get(STR_TIMESTAMP),
                               asn                   = node_data.get(STR_ASN),
