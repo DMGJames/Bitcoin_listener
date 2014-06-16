@@ -152,3 +152,10 @@ exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m -
 end script
 
 ```
+
+### GeoIP update cron job
+```
+crontab -e
+# Add this line
+0 18 * * 1 /home/ubuntu/listener_pusher/geoip/update.sh
+```
