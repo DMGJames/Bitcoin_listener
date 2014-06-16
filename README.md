@@ -1,3 +1,8 @@
+# Noe installation instructions:
+TODO:
+
+# Development Notes:
+
 ### Setup Environment 
 
 ```
@@ -35,7 +40,7 @@ hz 30
 ### Update Geo database
 `sh bitnodes/geoip/update.sh`
 
-### Auto generate miration script
+### Auto generate miration script (shound be run on your own dev machine)
 `alembic revision --autogenerate -m "[MESSAGE]"`
 
 
@@ -120,16 +125,23 @@ Start: `sudo start bitcoind`
 
 Stop: `sudo stop bitcoind`
 
-### Deploy
+### Deploy node pusher python script
 ``` 
 rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@54.255.25.194:/home/ubuntu/
 ```
 
 
 ### Node Pusher Daemon
+
+Test:
+
 ```
 python node_pusher_daemon_runner.py start local
 ```
+
+
+Add the following in sudo vi /etc/init/node_pusher.conf
+
 ```
 description "node_pusher"
 
