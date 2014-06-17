@@ -21,6 +21,7 @@ STR_USER_AGENT              = 'user_agent'
 STR_VERSION                 = 'version'
 STR_START_HEIGHT            = 'start_height'
 STR_NODE_DATA               = 'node_data'
+STR_ADDRESS                 = 'address'
 STR_IP_ADDRESS              = 'ip_address'
 STR_PORT                    = "port"
 STR_DISCOVERED_NODES        = "discovered_nodes"
@@ -40,7 +41,7 @@ FILENAME_GEO_ASN_V6         = "geoip/GeoIPASNumv6.dat"
 
 NODE_LOADING_BATCH_SIZE     = 5
 RESOLVING_POOL_SIZE         = 200
-PINGER_POOL_SIZE            = 2
+PINGER_POOL_SIZE            = 200
 
 
 NODE_PUSHER_DAEMON_PID_FILE = '/tmp/node-pusher-daemon.pid'

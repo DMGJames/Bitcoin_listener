@@ -30,7 +30,7 @@ class Node(Base):
 class NodeActivity(Base):
     __tablename__   = 'node_activity'
     id              = Column(Integer, primary_key=True)
-    ip_address      = Column(String(250), index=True)
+    address         = Column(String(250), index=True)
     status          = Column(String(250), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
     
