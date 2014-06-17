@@ -151,6 +151,8 @@ class NodePusher(object):
             self.session.commit()
         except Exception, e:
             print "!!!!!!!!!\n\n\n\nException on database update:!!!!!!\n\n\n\n", e
+            self.session.rollback()
+            print "rollback!!!!!!\n\n\n"
         self.lock.release()
         
         # 5. Update new last node timestamp

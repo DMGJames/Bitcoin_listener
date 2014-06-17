@@ -102,10 +102,13 @@ class NodePinger():
         
     def __get_last_node_activity_record__(self, address):
         self.lock.acquire(True)
-        result = session.query(NodeActivity).filter(NodeActivity.address == address).\
-            add_columns(NodeActivity.address, NodeActivity.status).\
-            order_by(NodeActivity.created_at.desc()).first()
-        result = result.__dict__ if result else None
+        try:
+            result = session.query(NodeActivity).filter(NodeActivity.address == address).\
+                add_columns(NodeActivity.address, NodeActivity.status).\
+                order_by(NodeActivity.created_at.desc()).first()
+            result = result.__dict__ if result else None
+        except Exception, e:
+            print "Exception on getting last activity:", e
         self.lock.release()
         return result
         
@@ -129,9 +132,13 @@ class NodePinger():
         if not last_activity or not is_active_str == last_activity.get(STR_STATUS):
             node_activity = NodeActivity(address = node.get(STR_ADDRESS),
                                           status = is_active_str)
-            self.lock.acquire(True) 
-            self.session.add(node_activity)
-            self.session.commit()
+            self.lock.acquire(True)
+            try: 
+                self.session.add(node_activity)
+                self.session.commit()
+            except Exception, e:
+                print "Exception on adding NodeActivity:", e
+                self.seesion.rollback()
             self.lock.release()
             print "%s changed status to: %s" % (node.get(STR_IP_ADDRESS), is_active_str)
         else :
