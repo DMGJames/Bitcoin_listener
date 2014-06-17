@@ -49,3 +49,9 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 NODE_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/node_pusher')
 NODE_PUSHER_DAEMON_STDOUT = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher.log')
 NODE_PUSHER_DAEMON_STDERR = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher-err.log')
+
+NODE_PINGER_DAEMON_PID_FILE = '/tmp/node-pinger-daemon.pid'
+file_dir = os.path.dirname(os.path.realpath(__file__))
+NODE_PINGER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/node_pinger')
+NODE_PINGER_DAEMON_STDOUT = os.path.join(NODE_PINGER_DAEMON_LOG_DIR, 'node-pinger.log')
+NODE_PINGER_DAEMON_STDERR = os.path.join(NODE_PINGER_DAEMON_LOG_DIR, 'node-pinger-err.log')

@@ -142,7 +142,6 @@ Test:
 python node_pusher_daemon_runner.py start local
 ```
 
-
 Add the following in sudo vi /etc/init/node_pusher.conf
 
 ```
@@ -167,6 +166,41 @@ exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m -
 end script
 
 ```
+
+
+### Node Pinger Daemon
+Test:
+
+```
+python node_pinger_daemon_runner.py start local
+```
+
+Add the following in sudo vi /etc/init/node_pinger.conf
+
+```
+description "node_pinger"
+
+start on filesystem
+stop on runlevel [!2345]
+oom never
+expect daemon
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+user=ubuntu
+home=/home/$user
+cmd=/home/$user/listener_pusher/node_pinger_daemon_runner.py
+pidfile=$home/listener_pusher/listener_pinger.pid
+###### Don't change anything below here unless you know what you're doing
+[[ -e $pidfile && ! -d "/proc/$(cat $pidfile)" ]] && rm $pidfile
+[[ -e $pidfile && "$(cat /proc/$(cat $pidfile)/cmdline)" != $cmd* ]] && rm $pidfile
+exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m --startas $cmd -- start test
+end script
+
+
+```
+
 
 ### GeoIP update cron job
 ```
