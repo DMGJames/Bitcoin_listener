@@ -124,30 +124,33 @@ class NodePusher(object):
         new_last_node_timestamp = 0
         add_count = 0
         self.lock.acquire(True)
-        for node in nodes:
-            node_data = node.get(STR_NODE_DATA, {})
-            if node.get(STR_IP_ADDRESS): 
-                m_node = Node(address               = node.get(STR_NODE),
-                              ip_address            = node.get(STR_IP_ADDRESS),
-                              port                  = node.get(STR_PORT),  
-                              timestamp             = node.get(STR_TIMESTAMP),
-                              asn                   = node_data.get(STR_ASN),
-                              city                  = node_data.get(STR_CITY),
-                              country               = node_data.get(STR_COUNTRY),
-                              hostname              = node_data.get(STR_HOSTNAME),
-                              latitude              = node_data.get(STR_LATITUDE),
-                              longitude             = node_data.get(STR_LONGITUDE),
-                              org                   = node_data.get(STR_ORG),       
-                              start_height          = node_data.get(STR_START_HEIGHT),
-                              time_zone             = node_data.get(STR_TIME_ZONE),
-                              user_agent            = node_data.get(STR_USER_AGENT), 
-                              version               = node_data.get(STR_VERSION))
-                #self.session.add(m_node)
-                # print m_node.__dict__
-                self.session.merge(m_node)
-                add_count = add_count + 1
-                if m_node.timestamp > new_last_node_timestamp : new_last_node_timestamp = m_node.timestamp 
-        self.session.commit()
+        try:
+            for node in nodes:
+                node_data = node.get(STR_NODE_DATA, {})
+                if node.get(STR_IP_ADDRESS): 
+                    m_node = Node(address               = node.get(STR_NODE),
+                                  ip_address            = node.get(STR_IP_ADDRESS),
+                                  port                  = node.get(STR_PORT),  
+                                  timestamp             = node.get(STR_TIMESTAMP),
+                                  asn                   = node_data.get(STR_ASN),
+                                  city                  = node_data.get(STR_CITY),
+                                  country               = node_data.get(STR_COUNTRY),
+                                  hostname              = node_data.get(STR_HOSTNAME),
+                                  latitude              = node_data.get(STR_LATITUDE),
+                                  longitude             = node_data.get(STR_LONGITUDE),
+                                  org                   = node_data.get(STR_ORG),       
+                                  start_height          = node_data.get(STR_START_HEIGHT),
+                                  time_zone             = node_data.get(STR_TIME_ZONE),
+                                  user_agent            = node_data.get(STR_USER_AGENT), 
+                                  version               = node_data.get(STR_VERSION))
+                    #self.session.add(m_node)
+                    # print m_node.__dict__
+                    self.session.merge(m_node)
+                    add_count = add_count + 1
+                    if m_node.timestamp > new_last_node_timestamp : new_last_node_timestamp = m_node.timestamp 
+            self.session.commit()
+        except Exception, e:
+            print "!!!!!!!!!\n\n\n\nException on database update:!!!!!!\n\n\n\n", e
         self.lock.release()
         
         # 5. Update new last node timestamp

@@ -32,11 +32,15 @@ class NodeLoader:
     def __load_and_push_nodes_in_redis__(self, node_pusher):
         node_ips = self.load_nodes()
         while len(node_ips) > 0:
-            #print "workers: queue size ==>",len(pool.workers), pool._requests_queue.qsize() 
             while self.pool._requests_queue.qsize() > len(self.pool.workers) :
+                print "workers: queue size ==>",len(self.pool.workers), self.pool._requests_queue.qsize()
+                print "sleep 0.5"
                 time.sleep(0.5)
             requests = threadpool.makeRequests(node_pusher.update_db_nodes_with_node_ips, [node_ips])
-            for req in requests: self.pool.putRequest(req)
+            try:
+                for req in requests: self.pool.putRequest(req)
+            except Exception, e:
+                print "Exception on request:", e
             #node_pusher.update_db_nodes_with_node_ips(node_ips = node_ips)
             node_ips = self.load_nodes()
 

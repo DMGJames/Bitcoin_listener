@@ -4,7 +4,7 @@ Created on Jun 16, 2014
 
 @author: yutelin
 '''
-from bitnodes.protocol import Connection, ProtocolError
+from bitnodes.protocol import Connection
 import socket
 import os
 import ConfigParser
