@@ -13,23 +13,36 @@ from sqlalchemy.orm.session import sessionmaker
 import sys
 from models import Node, NodeActivity
 from constants import STR_ACTIVE, STR_INACTIVE, PINGER_POOL_SIZE, STR_IP_ADDRESS,\
-    STR_PORT, STR_STATUS
+    STR_PORT, STR_STATUS, STR_ADDRESS
 import threading
 import threadpool
 import time
 
 def is_node_active(ip_address, port):
     connection = Connection((ip_address, port))
-    result = False
+    result = True
     try:
         connection.open()
-        connection.ping()
-        connection.close()
-        result = True 
-    except (ProtocolError, socket.error) as err:
-        print "Error: ", err
-        #logging.debug("Closing {} ({})".format(connection.to_addr, err))
-        connection.close()
+        handshake_msgs = connection.handshake()
+        if len(handshake_msgs) == 0:
+            result = False
+        else: 
+            connection.ping()
+            # Sink received messages to flush them off socket buffer
+            try:
+                pong_mesg = connection.get_messages()
+                if len(pong_mesg) == 0: result = False
+            except socket.timeout as err:
+                result = False
+                print "Socket timeout:", err
+    except socket.error as err:
+        result = False
+        print "Error:(", ip_address,"): ", err
+    except Exception, e:
+        result = False
+        print "Error:", e
+    connection.close()
+    print "is_node_active \"%s\": %s" % (ip_address, result)
     return result
 
 
@@ -87,10 +100,10 @@ class NodePinger():
         self.lock = threading.Lock()
         self.pool = threadpool.ThreadPool(PINGER_POOL_SIZE)
         
-    def __get_last_node_activity_record__(self, ip_address):
+    def __get_last_node_activity_record__(self, address):
         self.lock.acquire(True)
-        result = session.query(NodeActivity).filter(NodeActivity.ip_address == ip_address).\
-            add_columns(NodeActivity.ip_address, NodeActivity.status).\
+        result = session.query(NodeActivity).filter(NodeActivity.address == address).\
+            add_columns(NodeActivity.address, NodeActivity.status).\
             order_by(NodeActivity.created_at.desc()).first()
         result = result.__dict__ if result else None
         self.lock.release()
@@ -98,7 +111,7 @@ class NodePinger():
         
     def __get_all_sanity_nodes__(self):
         result = session.query(Node).filter(Node.user_agent.isnot(None)).\
-            add_columns(Node.user_agent, Node.ip_address, Node.port)
+            add_columns(Node.user_agent, Node.ip_address, Node.port, Node.address)
         return result
 
     def __boolean_to_activity_string__(self, active = False):
@@ -106,7 +119,7 @@ class NodePinger():
         
     def update_db_node_activity(self, node):
         #1. Get last record
-        last_activity = self.__get_last_node_activity_record__(ip_address = node.get(STR_IP_ADDRESS))
+        last_activity = self.__get_last_node_activity_record__(address = node.get(STR_ADDRESS))
         
         #2. Get status
         is_active = is_node_active(ip_address = node.get(STR_IP_ADDRESS), port = node.get(STR_PORT))
@@ -114,7 +127,7 @@ class NodePinger():
         
         #3. Update database
         if not last_activity or not is_active_str == last_activity.get(STR_STATUS):
-            node_activity = NodeActivity(ip_address = node.get(STR_IP_ADDRESS),
+            node_activity = NodeActivity(address = node.get(STR_ADDRESS),
                                           status = is_active_str)
             self.lock.acquire(True) 
             self.session.add(node_activity)
@@ -137,7 +150,8 @@ class NodePinger():
                 time.sleep(0.5)
             requests = threadpool.makeRequests(self.update_db_node_activity, [node_dict])
             for req in requests: self.pool.putRequest(req)
-    
+            
+        
 if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
