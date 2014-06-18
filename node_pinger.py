@@ -13,11 +13,12 @@ from sqlalchemy.orm.session import sessionmaker
 import sys
 from models import Node, NodeActivity
 from constants import STR_ACTIVE, STR_INACTIVE, PINGER_POOL_SIZE, STR_IP_ADDRESS, \
-    STR_PORT, STR_STATUS, STR_ADDRESS
+    STR_PORT, STR_STATUS
 import threading
 import threadpool
 import time
 import MySQLdb
+import traceback
 
 def is_node_active(ip_address, port):
     connection = Connection((ip_address, port))
@@ -38,12 +39,15 @@ def is_node_active(ip_address, port):
                 print "Socket timeout:", err
     except socket.error as err:
         result = False
-        print "Error:(", ip_address, "): ", err
+        sys.stdout.write('E')
+        # print "Error:(", ip_address, "): ", err
     except Exception, e:
         result = False
         print "Error:", e
     connection.close()
-    print "is_node_active \"%s\": %s" % (ip_address, result)
+    #print "is_node_active \"%s\": %s" % (ip_address, result)
+    sys.stdout.write('.')
+    sys.stdout.flush()
     return result
 
 
@@ -67,7 +71,7 @@ def set_session(env_setting='local'):
     engine = create_engine(db_engine)
     session = sessionmaker()
     session.configure(bind=engine)
-    return session()
+    return session
 
 def __test_ping__():
     ip = "107.170.211.10"
@@ -95,11 +99,20 @@ def __test_node_pinger__(session):
     node = {STR_IP_ADDRESS : ip, STR_PORT : port} 
     pinger.update_db_node_activity(node)
        
+class NetworkActivity():
+    
+    def __init__(self, ip_address, port, status):
+        self.ip_address = ip_address
+        self.port = port
+        self.status = status
+    
 class NodePinger():
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, session_fn):
+        self.session_fn = session_fn
+        self.session = self.session_fn()
         self.lock = threading.Lock()
         self.pool = threadpool.ThreadPool(PINGER_POOL_SIZE)
+        self.activities = []
         
     def __get_last_node_activity_record__(self, address):
         self.lock.acquire(True)
@@ -108,48 +121,67 @@ class NodePinger():
                 add_columns(NodeActivity.address, NodeActivity.status).\
                 order_by(NodeActivity.created_at.desc()).first()
             result = result.__dict__ if result else None
-            self.session.close()
         except (AttributeError, MySQLdb.OperationalError), e:
             print "Exception on getting last activity: MySQL operation error", e
             time.sleep(0.5)
         except Exception, e:
             print "Exception on getting last activity:", e
+        finally:
+            self.session.close()
         self.lock.release()
         return result
         
     def __get_all_sanity_nodes__(self):
-        result = self.session.query(Node).filter(Node.user_agent.isnot(None)).\
-            add_columns(Node.user_agent, Node.ip_address, Node.port, Node.address)
+        result = []
+        try:
+            result = self.session.query(Node).filter(Node.user_agent.isnot(None)).\
+                add_columns(Node.user_agent, Node.ip_address, Node.port, Node.address)
+            #result = [{STR_ADDRESS: node.address, STR_IP_ADDRESS:node.ip_address, STR_PORT:node.port} for node in nodes]
+        except Exception ,e:
+            print e
+        finally:
+            self.session.close()
         return result
 
     def __boolean_to_activity_string__(self, active=False):
         return STR_ACTIVE if active else STR_INACTIVE     
         
     def update_db_node_activity(self, node):
-        # 1. Get last record
-        last_activity = self.__get_last_node_activity_record__(address=node.get(STR_ADDRESS))
-        
-        # 2. Get status
+        # 1. Get status
         is_active = is_node_active(ip_address=node.get(STR_IP_ADDRESS), port=node.get(STR_PORT))
         is_active_str = self.__boolean_to_activity_string__(is_active)
         
-        # 3. Update database
-        if not last_activity or not is_active_str == last_activity.get(STR_STATUS):
-            node_activity = NodeActivity(address=node.get(STR_ADDRESS),
-                                          status=is_active_str)
-            self.lock.acquire(True)
-            try: 
-                self.session.add(node_activity)
-                self.session.commit()
+        # 2. Add NetworkActivity to the shared list self.activities
+        activity = NetworkActivity(ip_address = node.get(STR_IP_ADDRESS), port = node.get(STR_PORT), status = is_active_str)
+        self.lock.acquire(True)
+        self.activities.append(activity)
+        self.lock.release()
+
+    def __update_db_with_activities__(self, activities):
+        if activities:
+            print "\n\n================================[Update db]:", len(activities)
+            try:
+                add_count = 0
+                for activity in activities:
+                    address = "%s:%s" % (activity.ip_address, activity.port)
+                    #1. Get last status
+                    last_activity = self.__get_last_node_activity_record__(address=address)
+                    if not last_activity or not activity.status == last_activity.get(STR_STATUS):
+                        print "Add: ", activity.ip_address, activity.status
+                        node_activity = NodeActivity(address=address,status=activity.status)
+                        # Add to DB
+                        self.session.add(node_activity)
+                        self.session.commit()
+                        add_count = add_count+1
+                print "Added activities:", add_count 
             except Exception, e:
-                print "Exception on adding NodeActivity:", e
+                print "Error on __update_db_with_activities__:", e
+                traceback.print_exc(file=sys.stdout)
                 self.session.rollback()
-            self.session.close()
-            self.lock.release()
-            print "%s changed status to: %s" % (node.get(STR_IP_ADDRESS), is_active_str)
-        else :
-            print "%s keeps status: \"%s\"" % (node.get(STR_IP_ADDRESS), is_active_str)
-        
+            finally:
+                self.session.close()
+
+            
     def update_db_all_node_activities(self):
         try:
             # 1. Load all nodes
@@ -161,7 +193,9 @@ class NodePinger():
             for node in nodes:
                 node_dict = node.__dict__
                 while self.pool._requests_queue.qsize() > len(self.pool.workers) :
-                    time.sleep(0.5)
+                    self.pool.wait()
+                    self.__update_db_with_activities__(self.activities)
+                    self.activities = []              
                 requests = threadpool.makeRequests(self.update_db_node_activity, [node_dict])
                 for req in requests: self.pool.putRequest(req)
         except Exception, e:
@@ -171,10 +205,10 @@ if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
-    session = set_session(env_setting=env_setting)
+    session_fn = set_session(env_setting=env_setting)
 #     __test_ping__()
 #     __test_db_query__(session = session)
 #     __test_node_pinger__(session = session)
-    node_pinger = NodePinger(session=session)
+    node_pinger = NodePinger(session_fn=session_fn)
     node_pinger.update_db_all_node_activities()
-    session.close()
+#     session.close()

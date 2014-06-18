@@ -54,6 +54,20 @@ hz 30
 
 
 ### Run Test
+
+#### Test Model
+```
+python
+import sqlalchemy
+from sqlalchemy import create_engine
+engine = create_engine('mysql://root:teammaicoin@localhost:3306/listener', echo=True)
+from sqlalchemy.orm import sessionmaker
+Session = sessionmaker(bind=engine)
+session = Session()
+import models
+session.query(models.Node).all() 
+
+```
 #### Test uploading nodes via file
 `python main.py -n test/nodes_test.txt -e local`
 
@@ -130,7 +144,7 @@ Stop: `sudo stop bitcoind`
 
 ### Deploy node pusher python script
 ``` 
-rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@54.255.25.194:/home/ubuntu/
+rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@l2:/home/ubuntu/
 ```
 
 

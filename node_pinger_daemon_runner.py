@@ -16,12 +16,12 @@ from utils.daemon_utils import Daemon
 import time
 
 class NodePingerDaemon(Daemon):
-    def set_session(self, session):
-        self.session = session
+    def set_session_fn(self, session_fn):
+        self.session_fn = session_fn
         
     def run(self):
         print "start NodePinger"
-        node_pinger = NodePinger(session = self.session)
+        node_pinger = NodePinger(session_fn = self.session_fn)
         while True:
             try:
                 node_pinger.update_db_all_node_activities()
@@ -54,8 +54,8 @@ def set_session(env_setting='local'):
     #4. Configure SQLAlchemy session
     engine = create_engine(db_engine)
     session = sessionmaker()
-    session.configure(bind=engine, autocommit=True)
-    return session()
+    session.configure(bind=engine)
+    return session
 
 if __name__ == '__main__':
     set_env()
@@ -64,8 +64,8 @@ if __name__ == '__main__':
         daemon = NodePingerDaemon(pidfile=NODE_PINGER_DAEMON_PID_FILE, 
                               stdout=NODE_PINGER_DAEMON_STDOUT, 
                               stderr=NODE_PINGER_DAEMON_STDERR)
-        session = set_session(env_setting=env_setting)
-        daemon.set_session(session = session)
+        session_fn = set_session(env_setting=env_setting)
+        daemon.set_session_fn(session_fn = session_fn)
         if 'start' == sys.argv[1]:
             print "start"
             daemon.start()
@@ -82,5 +82,3 @@ if __name__ == '__main__':
     else:
         print "usage: %s start|stop|restart local|test|prod" % sys.argv[0]
         sys.exit(2)
-
-    session.close()
