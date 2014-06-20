@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, Numeric
+from sqlalchemy import Column, DateTime, Integer, String, Numeric, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.sqltypes import BigInteger
@@ -34,3 +34,15 @@ class NodeActivity(Base):
     status          = Column(String(250), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
     
+class Transaction(Base):
+    __tablename__   = 'transaction'
+    txid            = Column(String(250),primary_key=True)
+    created_at      = Column(DateTime, default=func.now(),index=True)   
+    
+class TransactionInfo(Base):
+    __tablename__   = "transaction_info"
+    #id              = Column(Integer, primary_key=True)
+    txid            = Column(String(250), primary_key=True)
+    relayed_from    = Column(String(250), primary_key=True)
+    created_at      = Column(DateTime, default=func.now(),index=True)
+    json_string     = Column(Text)

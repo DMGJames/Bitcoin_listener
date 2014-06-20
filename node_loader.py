@@ -5,7 +5,8 @@ Created on Jun 12, 2014
 '''
 import redis
 from constants import STR_DISCOVERED_NODES, NODE_LOADING_BATCH_SIZE,\
-    STR_NODE_DISCOVERED, STR_CHANNEL, STR_TYPE, STR_MESSAGE, RESOLVING_POOL_SIZE
+    STR_NODE_DISCOVERED, STR_CHANNEL, STR_TYPE, STR_MESSAGE, RESOLVING_POOL_SIZE,\
+    MAI_REDIS_PASSWORD
 import threadpool
 import time
 
@@ -14,7 +15,7 @@ import time
 class NodeLoader:
     def __init__(self):
         try:
-            self.redis_connection =  redis.StrictRedis(password='teammaicoin')
+            self.redis_connection =  redis.StrictRedis(password=MAI_REDIS_PASSWORD)
             self.redis_connection.ping()
         except:
             self.redis_connection =  redis.StrictRedis()

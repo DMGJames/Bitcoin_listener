@@ -32,6 +32,12 @@ STR_MESSAGE                 = "message"
 STR_ACTIVE                  = "active"
 STR_INACTIVE                = "inactive"
 STR_STATUS                  = "status"
+STR_DISCOVERED_TXS          = "discovered_txs"
+STR_TX_DISCOVERED           = "tx_discovered"
+STR_TXID                    = "txid"
+STR_RELAYED_FROM            = "relayedFrom"
+
+
 
 FILENAME_STATE_CFG          = 'state.cfg'
 FILENAME_GEO_CITY           = "geoip/GeoLiteCity.dat"
@@ -43,15 +49,20 @@ NODE_LOADING_BATCH_SIZE     = 5
 RESOLVING_POOL_SIZE         = 200
 PINGER_POOL_SIZE            = 200
 
+MAI_REDIS_PASSWORD          = 'teammaicoin'
 
-NODE_PUSHER_DAEMON_PID_FILE = '/tmp/node-pusher-daemon.pid'
 file_dir = os.path.dirname(os.path.realpath(__file__))
+NODE_PUSHER_DAEMON_PID_FILE = '/tmp/node-pusher-daemon.pid'
 NODE_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/node_pusher')
 NODE_PUSHER_DAEMON_STDOUT = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher.log')
 NODE_PUSHER_DAEMON_STDERR = os.path.join(NODE_PUSHER_DAEMON_LOG_DIR, 'node-pusher-err.log')
 
 NODE_PINGER_DAEMON_PID_FILE = '/tmp/node-pinger-daemon.pid'
-file_dir = os.path.dirname(os.path.realpath(__file__))
 NODE_PINGER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/node_pinger')
 NODE_PINGER_DAEMON_STDOUT = os.path.join(NODE_PINGER_DAEMON_LOG_DIR, 'node-pinger.log')
 NODE_PINGER_DAEMON_STDERR = os.path.join(NODE_PINGER_DAEMON_LOG_DIR, 'node-pinger-err.log')
+
+TX_PUSHER_DAEMON_PID_FILE = '/tmp/transaction-pusher-daemon.pid'
+TX_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction_pusher')
+TX_PUSHER_DAEMON_STDOUT = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher.log')
+TX_PUSHER_DAEMON_STDERR = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher-err.log')
