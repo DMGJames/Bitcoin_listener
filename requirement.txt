@@ -1,0 +1,11 @@
+Mako==1.0.0
+MarkupSafe==0.23
+MySQL-python==1.2.5
+SQLAlchemy==0.9.4
+alembic==0.6.5
+gevent==1.0.1
+greenlet==0.4.2
+pygeoip==0.3.1
+redis==2.10.1
+threadpool==1.2.7
+wsgiref==0.1.2

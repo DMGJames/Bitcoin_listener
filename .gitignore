@@ -1,0 +1,19 @@
+venv
+*.pyc
+staticfiles
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+.settings
+
+# Runtime data
+state.cfg
+
+# GeoIp data
+geoip/*.dat
+
+# Log
+log/*
+*.log
