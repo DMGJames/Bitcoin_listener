@@ -36,7 +36,10 @@ STR_DISCOVERED_TXS          = "discovered_txs"
 STR_TX_DISCOVERED           = "tx_discovered"
 STR_TXID                    = "txid"
 STR_RELAYED_FROM            = "relayedFrom"
-
+STR_TIME_RECEIVED           = "timeReceived"
+STR_RECEIVED_AT             = "received_at"
+STR_VALUE                   = "value"
+STR_VOUT                    = "vout"
 
 
 FILENAME_STATE_CFG          = 'state.cfg'

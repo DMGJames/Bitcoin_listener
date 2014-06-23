@@ -37,6 +37,7 @@ class NodeActivity(Base):
 class Transaction(Base):
     __tablename__   = 'transaction'
     txid            = Column(String(250),primary_key=True)
+    value           = Column(Numeric(precision=15, scale=8), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)   
     
 class TransactionInfo(Base):
@@ -44,5 +45,6 @@ class TransactionInfo(Base):
     #id              = Column(Integer, primary_key=True)
     txid            = Column(String(250), primary_key=True)
     relayed_from    = Column(String(250), primary_key=True)
+    received_at     = Column(DateTime,index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
     json_string     = Column(Text)
