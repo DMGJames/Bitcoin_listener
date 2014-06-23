@@ -150,6 +150,10 @@ Stop: `sudo stop bitcoind`
 rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@l2:/home/ubuntu/
 ```
 
+```
+rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@nva_l1:/home/ubuntu/
+```
+
 
 ### Node Pusher Daemon
 
@@ -255,5 +259,5 @@ end script
 ```
 crontab -e
 # Add this line
-0 18 * * 1 /home/ubuntu/listener_pusher/geoip/update.sh
+0 18 * * 1 cd /home/ubuntu/listener_pusher/geoip/ && ./update.sh
 ```

@@ -6,11 +6,12 @@ Created on Jun 19, 2014
 from os.path import os, sys
 from common import set_session
 from constants import MAI_REDIS_PASSWORD, STR_DISCOVERED_TXS, STR_TX_DISCOVERED,\
-    STR_CHANNEL, STR_MESSAGE, STR_TYPE, STR_TXID, STR_RELAYED_FROM
+    STR_CHANNEL, STR_MESSAGE, STR_TYPE, STR_TXID, STR_RELAYED_FROM,\
+    STR_RECEIVED_AT, STR_TIME_RECEIVED, STR_VALUE, STR_VOUT
 import redis
 import json
 from models import Transaction, TransactionInfo
-
+from datetime import datetime
 
 class TransactionPusher():
     def __init__(self, session_fn):
@@ -41,15 +42,27 @@ class TransactionPusher():
             result=self.redis_connection.lpop(STR_DISCOVERED_TXS)
         return result
     
+    def __transaction_to_dict__(self, txn):
+        result = {}
+        if txn:
+            result = json.loads(txn)
+            result[STR_RECEIVED_AT] = datetime.strptime(result.get(STR_TIME_RECEIVED), '%Y-%m-%d %H:%M:%S')
+            result[STR_VALUE] = 0
+            for vout_item in result.get(STR_VOUT):
+                result[STR_VALUE] = result[STR_VALUE] + vout_item.get(STR_VALUE) 
+        return result
+
     def __load_transaction_and_update_db__(self):
         #1. Load oldest transaction
         txn = self.__load_transaction__()
         if txn:
-            txn_dict = json.loads(txn)
+            txn_dict = self.__transaction_to_dict__(txn = txn)
             #print txn_dict
             #2. Save it to "transaction" table if doesn't exist
             try: 
-                transaction = Transaction(txid = txn_dict.get(STR_TXID))
+                transaction = Transaction(txid = txn_dict.get(STR_TXID),
+                                          value = txn_dict.get(STR_VALUE)
+                                          )
                 self.session.merge(transaction)
                 self.session.commit()
                 print "Added transaction:", transaction.txid
@@ -63,6 +76,7 @@ class TransactionPusher():
             try:                 
                 transaction_info = TransactionInfo(txid = txn_dict.get(STR_TXID),
                                                    relayed_from = txn_dict.get(STR_RELAYED_FROM),
+                                                   received_at = txn_dict.get(STR_RECEIVED_AT),
                                                    json_string = txn)
                 self.session.merge(transaction_info)
                 self.session.commit()
@@ -76,7 +90,8 @@ class TransactionPusher():
     
     def __load_all_transactions_and_update_db__(self):
         while self.__load_transaction_and_update_db__() != None:
-            continue
+            break
+            #continue
 
 def set_env():
     # 1. Append current file directory as path
