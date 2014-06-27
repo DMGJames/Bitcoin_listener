@@ -38,7 +38,10 @@ class Transaction(Base):
     __tablename__   = 'transaction'
     txid            = Column(String(250),primary_key=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
-    created_at      = Column(DateTime, default=func.now(),index=True)   
+    created_at      = Column(DateTime, default=func.now(),index=True)
+
+    def print_pushing_message(self):
+        print "Pushed transaction:", self.txid
     
 class TransactionInfo(Base):
     __tablename__   = "transaction_info"
@@ -48,3 +51,6 @@ class TransactionInfo(Base):
     received_at     = Column(DateTime,index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
     json_string     = Column(Text)
+
+    def print_pushing_message(self):
+        print "Pushed transaction info:", self.txid, self.relayed_from

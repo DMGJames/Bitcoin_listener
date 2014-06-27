@@ -19,7 +19,7 @@ class TransactionPusherDaemon(Daemon):
     def run(self):
         print "Start TransactionPusherDaemon"
         pusher = TransactionPusher(session = self.session)
-        pusher.update_db_transactions()
+        pusher.start()
         print "End TransactionPusherDaemon"
 
 def set_env():

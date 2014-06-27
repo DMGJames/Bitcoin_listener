@@ -69,3 +69,6 @@ TX_PUSHER_DAEMON_PID_FILE = '/tmp/transaction-pusher-daemon.pid'
 TX_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction_pusher')
 TX_PUSHER_DAEMON_STDOUT = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher.log')
 TX_PUSHER_DAEMON_STDERR = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher-err.log')
+
+DEFAULT_LOADING_BATCH_SIZE = 1
+DEFAULT_SLEEP_TIME = 10
