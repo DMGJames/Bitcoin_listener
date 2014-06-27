@@ -14,14 +14,15 @@ from sqlalchemy.orm.session import sessionmaker
 from node_pinger import NodePinger
 from utils.daemon_utils import Daemon
 import time
+from common import set_session
 
 class NodePingerDaemon(Daemon):
-    def set_session_fn(self, session_fn):
-        self.session_fn = session_fn
+    def set_session(self, session):
+        self.session = session
         
     def run(self):
         print "start NodePinger"
-        node_pinger = NodePinger(session_fn = self.session_fn)
+        node_pinger = NodePinger(session = self.session)
         while True:
             try:
                 node_pinger.update_db_all_node_activities()
@@ -40,23 +41,6 @@ def set_env():
     if not os.path.exists(NODE_PINGER_DAEMON_LOG_DIR):
         os.makedirs(NODE_PINGER_DAEMON_LOG_DIR)
 
-def set_session(env_setting='local'):    
-    #2. Load db config
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    file_name = "alembic_%s.ini" % env_setting
-    db_config_file = os.path.join(file_dir, file_name)
-    config = ConfigParser.ConfigParser()
-    config.read(db_config_file)
-    
-    #3. Set SQLAlchemy db engine
-    db_engine = config.get('alembic', 'sqlalchemy.url')
-    
-    #4. Configure SQLAlchemy session
-    engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    return session
-
 if __name__ == '__main__':
     set_env()
     if len(sys.argv) == 3:
@@ -64,8 +48,8 @@ if __name__ == '__main__':
         daemon = NodePingerDaemon(pidfile=NODE_PINGER_DAEMON_PID_FILE, 
                               stdout=NODE_PINGER_DAEMON_STDOUT, 
                               stderr=NODE_PINGER_DAEMON_STDERR)
-        session_fn = set_session(env_setting=env_setting)
-        daemon.set_session_fn(session_fn = session_fn)
+        session = set_session(env_setting=env_setting)
+        daemon.set_session(session = session)
         if 'start' == sys.argv[1]:
             print "start"
             daemon.start()

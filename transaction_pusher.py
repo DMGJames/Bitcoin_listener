@@ -14,9 +14,8 @@ from models import Transaction, TransactionInfo
 from datetime import datetime
 
 class TransactionPusher():
-    def __init__(self, session_fn):
-        self.session_fn = session_fn
-        self.session = self.session_fn()
+    def __init__(self, session):
+        self.session = session
         try:
             self.redis_connection =  redis.StrictRedis(password=MAI_REDIS_PASSWORD)
             self.redis_connection.ping()
@@ -102,7 +101,7 @@ if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
-    session_fn = set_session(env_setting=env_setting)
-    pusher = TransactionPusher(session_fn=session_fn)
+    session = set_session(env_setting=env_setting)
+    pusher = TransactionPusher(session=session)
     pusher.update_db_transactions()
     

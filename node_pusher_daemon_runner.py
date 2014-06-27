@@ -14,6 +14,7 @@ from sqlalchemy.orm.session import sessionmaker
 from constants import NODE_PUSHER_DAEMON_PID_FILE, NODE_PUSHER_DAEMON_STDOUT,\
     NODE_PUSHER_DAEMON_STDERR, NODE_PUSHER_DAEMON_LOG_DIR
 from node_loader import NodeLoader
+from common import set_session
 
 class NodePusherDaemon(Daemon):
     def set_session(self, session):
@@ -34,23 +35,6 @@ def set_env():
     #2. Create logging dir
     if not os.path.exists(NODE_PUSHER_DAEMON_LOG_DIR):
         os.makedirs(NODE_PUSHER_DAEMON_LOG_DIR)
-
-def set_session(env_setting='local'):    
-    #2. Load db config
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    file_name = "alembic_%s.ini" % env_setting
-    db_config_file = os.path.join(file_dir, file_name)
-    config = ConfigParser.ConfigParser()
-    config.read(db_config_file)
-    
-    #3. Set SQLAlchemy db engine
-    db_engine = config.get('alembic', 'sqlalchemy.url')
-    
-    #4. Configure SQLAlchemy session
-    engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    return session()
 
 if __name__ == '__main__':
     set_env()

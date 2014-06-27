@@ -21,6 +21,7 @@ def set_session(env_setting='local'):
     
     # 4. Configure SQLAlchemy session
     engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
+    session_maker = sessionmaker()
+    session_maker.configure(bind=engine)
+    session = session_maker()
     return session

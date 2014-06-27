@@ -13,6 +13,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import node_loader
 from node_loader import NodeLoader
+from common import set_session
 
 env_setting = "local"
 
@@ -20,23 +21,6 @@ def set_env():
     #1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))
     sys.path.append(file_dir)
-
-def set_session():    
-    #2. Load db config
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    file_name = "alembic_%s.ini" % env_setting
-    db_config_file = os.path.join(file_dir, file_name)
-    config = ConfigParser.ConfigParser()
-    config.read(db_config_file)
-    
-    #3. Set SQLAlchemy db engine
-    db_engine = config.get('alembic', 'sqlalchemy.url')
-    
-    #4. Configure SQLAlchemy session
-    engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    return session()
     
 def get_opt(argv):
     inputfile = '' 

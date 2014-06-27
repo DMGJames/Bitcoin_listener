@@ -19,6 +19,7 @@ import threadpool
 import time
 import MySQLdb
 import traceback
+from common import set_session
 
 def is_node_active(ip_address, port):
     connection = Connection((ip_address, port))
@@ -55,23 +56,6 @@ def set_env():
     # 1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))
     sys.path.append(file_dir)
-    
-def set_session(env_setting='local'):    
-    # 2. Load db config
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    file_name = "alembic_%s.ini" % env_setting
-    db_config_file = os.path.join(file_dir, file_name)
-    config = ConfigParser.ConfigParser()
-    config.read(db_config_file)
-    
-    # 3. Set SQLAlchemy db engine
-    db_engine = config.get('alembic', 'sqlalchemy.url')
-    
-    # 4. Configure SQLAlchemy session
-    engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    return session
 
 def __test_ping__():
     ip = "107.170.211.10"
@@ -107,9 +91,8 @@ class NetworkActivity():
         self.status = status
     
 class NodePinger():
-    def __init__(self, session_fn):
-        self.session_fn = session_fn
-        self.session = self.session_fn()
+    def __init__(self, session):
+        self.session = session
         self.lock = threading.Lock()
         self.pool = threadpool.ThreadPool(PINGER_POOL_SIZE)
         self.activities = []
@@ -205,10 +188,10 @@ if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
-    session_fn = set_session(env_setting=env_setting)
+    session = set_session(env_setting=env_setting)
 #     __test_ping__()
 #     __test_db_query__(session = session)
 #     __test_node_pinger__(session = session)
-    node_pinger = NodePinger(session_fn=session_fn)
+    node_pinger = NodePinger(session=session)
     node_pinger.update_db_all_node_activities()
 #     session.close()
