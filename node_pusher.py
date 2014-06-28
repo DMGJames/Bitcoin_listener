@@ -30,16 +30,17 @@ class NodePusher(Pusher):
                  queue = STR_DISCOVERED_NODES,
                  batch_size = DEFAULT_LOADING_BATCH_SIZE,
                  sleep_time = DEFAULT_SLEEP_TIME,
-                 password = MAI_REDIS_PASSWORD):
+                 password = MAI_REDIS_PASSWORD,
+                 pool_size = RESOLVING_POOL_SIZE):
         super(NodePusher, self).__init__(
             session = session,
             channel = channel,
             queue = queue,
             batch_size = batch_size,
             sleep_time = sleep_time,
-            password = password)
-        self.lock = threading.Lock()
-        self.pool = threadpool.ThreadPool(RESOLVING_POOL_SIZE)
+            password = password,
+            pool_size = pool_size)
+        #self.lock = threading.Lock()
 
     def process_data(self, node_ips):
         current_timestamp = int(math.floor(time.time()))

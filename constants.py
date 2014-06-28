@@ -49,7 +49,7 @@ FILENAME_GEO_ASN            = "geoip/GeoIPASNum.dat"
 FILENAME_GEO_ASN_V6         = "geoip/GeoIPASNumv6.dat" 
 
 NODE_LOADING_BATCH_SIZE     = 5
-RESOLVING_POOL_SIZE         = 200
+RESOLVING_POOL_SIZE         = 10
 PINGER_POOL_SIZE            = 200
 
 MAI_REDIS_PASSWORD          = 'teammaicoin'
@@ -70,5 +70,5 @@ TX_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction_pusher')
 TX_PUSHER_DAEMON_STDOUT = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher.log')
 TX_PUSHER_DAEMON_STDERR = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher-err.log')
 
-DEFAULT_LOADING_BATCH_SIZE = 1
+DEFAULT_LOADING_BATCH_SIZE = 2
 DEFAULT_SLEEP_TIME = 10

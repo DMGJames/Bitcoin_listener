@@ -8,7 +8,7 @@ from common import set_session
 from constants import MAI_REDIS_PASSWORD, STR_DISCOVERED_TXS, STR_TX_DISCOVERED,\
     STR_CHANNEL, STR_MESSAGE, STR_TYPE, STR_TXID, STR_RELAYED_FROM,\
     STR_RECEIVED_AT, STR_TIME_RECEIVED, STR_VALUE, STR_VOUT,\
-    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME
+    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, RESOLVING_POOL_SIZE
 import redis
 import json
 from models import Transaction, TransactionInfo
@@ -21,19 +21,21 @@ class TransactionPusher(Pusher):
                  queue = STR_DISCOVERED_TXS,
                  batch_size = DEFAULT_LOADING_BATCH_SIZE,
                  sleep_time = DEFAULT_SLEEP_TIME,
-                 password = MAI_REDIS_PASSWORD):
+                 password = MAI_REDIS_PASSWORD,
+                 pool_size = RESOLVING_POOL_SIZE):
         super(TransactionPusher, self).__init__(
             session = session,
             channel = channel,
             queue = queue,
             batch_size = batch_size,
             sleep_time = sleep_time,
-            password = password)
-    
+            password = password,
+            pool_size = pool_size)
+
     def process_data(self, data):
         result = []
         for datum in data:
-            tx_dict = self.__data_to_tx_dict__(datum)
+            tx_dict = self.__datum_to_tx_dict__(datum)
             tx = Transaction(txid = tx_dict.get(STR_TXID),
                              value = tx_dict.get(STR_VALUE))
             result.append(tx)
@@ -45,19 +47,28 @@ class TransactionPusher(Pusher):
             result.append(tx_info)
         return result
 
-
-    def __data_to_tx_dict__(self, txn):
+    def __datum_to_tx_dict__(self, datum):
         result = {}
-        if txn:
-            result = json.loads(txn)
+        if datum:
+            result = json.loads(datum)
             result[STR_RECEIVED_AT] = datetime.strptime(result.get(STR_TIME_RECEIVED), '%Y-%m-%d %H:%M:%S')
             result[STR_VALUE] = 0
             for vout_item in result.get(STR_VOUT):
                 result[STR_VALUE] = result[STR_VALUE] + vout_item.get(STR_VALUE) 
         return result
 
-    def __print_pushing_message__(self, pushed):
+    #def __print_loading_message__(self, data):
+        #self.print_lock.acquire(True)
+     #   print "Done loading transactions:"
+        # for datum in data:
+        #     tx_dict = __datum_to_tx_dict__(datum)
+        #     print '\t', tx_dict
+        #self.print_lock.release()
+
+    def __print_pushing_message__(self,  pushed):
+        print "Done pushing transactions:"
         for p in pushed:
+            print '\t',
             p.print_pushing_message()
 
 def set_env():
