@@ -13,7 +13,6 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from constants import NODE_PUSHER_DAEMON_PID_FILE, NODE_PUSHER_DAEMON_STDOUT,\
     NODE_PUSHER_DAEMON_STDERR, NODE_PUSHER_DAEMON_LOG_DIR
-from node_loader import NodeLoader
 from common import set_session
 
 class NodePusherDaemon(Daemon):
@@ -21,11 +20,10 @@ class NodePusherDaemon(Daemon):
         self.session = session
         
     def run(self):
-        node_pusher = NodePusher(session=self.session)
-        print "start load_and_push_nodes"
-        node_loader = NodeLoader()
-        node_loader.load_and_push_nodes(node_pusher = node_pusher)
-        print "end load_and_push_nodes"
+        print "Start NodePusherDaemon"
+        pusher = NodePusher(session = self.session)
+        pusher.start()
+        print "End NodePusherDaemon"
         
 def set_env():
     #1. Append current file directory as path
