@@ -57,13 +57,8 @@ class TransactionPusher(Pusher):
                 result[STR_VALUE] = result[STR_VALUE] + vout_item.get(STR_VALUE) 
         return result
 
-    #def __print_loading_message__(self, data):
-        #self.print_lock.acquire(True)
-     #   print "Done loading transactions:"
-        # for datum in data:
-        #     tx_dict = __datum_to_tx_dict__(datum)
-        #     print '\t', tx_dict
-        #self.print_lock.release()
+    def __print_loading_message__(self, data):
+        print "Done loading transactions"
 
     def __print_pushing_message__(self,  pushed):
         print "Done pushing transactions:"

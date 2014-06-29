@@ -178,7 +178,7 @@ class NodePinger():
                 while self.pool._requests_queue.qsize() > len(self.pool.workers) :
                     self.pool.wait()
                     self.__update_db_with_activities__(self.activities)
-                    self.activities = []              
+                    self.activities = []
                 requests = threadpool.makeRequests(self.update_db_node_activity, [node_dict])
                 for req in requests: self.pool.putRequest(req)
         except Exception, e:
