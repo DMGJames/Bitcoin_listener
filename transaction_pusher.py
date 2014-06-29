@@ -1,14 +1,14 @@
 '''
 Created on Jun 19, 2014
 
-@author: yutelin
+@author: yutelin, webber
 '''
 from os.path import os, sys
 from common import set_session
-from constants import MAI_REDIS_PASSWORD, STR_DISCOVERED_TXS, STR_TX_DISCOVERED,\
-    STR_CHANNEL, STR_MESSAGE, STR_TYPE, STR_TXID, STR_RELAYED_FROM,\
-    STR_RECEIVED_AT, STR_TIME_RECEIVED, STR_VALUE, STR_VOUT,\
-    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, RESOLVING_POOL_SIZE
+from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_CHANNEL,\
+    ATTRIBUTE_CHANNEL, ATTRIBUTE_MESSAGE, ATTRIBUTE_TYPE, ATTRIBUTE_TXID, ATTRIBUTE_RELAYED_FROM,\
+    ATTRIBUTE_RECEIVED_AT, ATTRIBUTE_TIME_RECEIVED, ATTRIBUTE_VALUE, ATTRIBUTE_VOUT,\
+    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, DEFAULT_RESOLVING_POOL_SIZE
 import redis
 import json
 from models import Transaction, TransactionInfo
@@ -17,12 +17,12 @@ from pusher import Pusher
 
 class TransactionPusher(Pusher):
     def __init__(self, session,
-                 channel = STR_TX_DISCOVERED,
-                 queue = STR_DISCOVERED_TXS,
+                 channel = DEFAULT_TX_CHANNEL,
+                 queue = DEFAULT_TX_QUEUE,
                  batch_size = DEFAULT_LOADING_BATCH_SIZE,
                  sleep_time = DEFAULT_SLEEP_TIME,
-                 password = MAI_REDIS_PASSWORD,
-                 pool_size = RESOLVING_POOL_SIZE):
+                 password =  DEFAULT_MAI_REDIS_PASSWORD,
+                 pool_size = DEFAULT_RESOLVING_POOL_SIZE):
         super(TransactionPusher, self).__init__(
             session = session,
             channel = channel,
@@ -33,31 +33,32 @@ class TransactionPusher(Pusher):
             pool_size = pool_size)
 
     def process_data(self, data):
+        json_txs = data
         result = []
-        for datum in data:
-            tx_dict = self.__datum_to_tx_dict__(datum)
-            tx = Transaction(txid = tx_dict.get(STR_TXID),
-                             value = tx_dict.get(STR_VALUE))
+        for json_tx in json_txs:
+            dict_tx = self.__json_tx_to_dict_tx__(json_tx)
+            tx = Transaction(txid = dict_tx.get(ATTRIBUTE_TXID),
+                             value = dict_tx.get(ATTRIBUTE_VALUE))
             result.append(tx)
 
-            tx_info = TransactionInfo(txid = tx_dict.get(STR_TXID),
-                                      relayed_from = tx_dict.get(STR_RELAYED_FROM),
-                                      received_at = tx_dict.get(STR_RECEIVED_AT),
-                                      json_string = datum)
+            tx_info = TransactionInfo(txid = dict_tx.get(ATTRIBUTE_TXID),
+                                      relayed_from = dict_tx.get(ATTRIBUTE_RELAYED_FROM),
+                                      received_at = dict_tx.get(ATTRIBUTE_RECEIVED_AT),
+                                      json_string = json_tx)
             result.append(tx_info)
         return result
 
-    def __datum_to_tx_dict__(self, datum):
+    def __json_tx_to_dict_tx__(self, json_tx):
         result = {}
-        if datum:
-            result = json.loads(datum)
-            result[STR_RECEIVED_AT] = datetime.strptime(result.get(STR_TIME_RECEIVED), '%Y-%m-%d %H:%M:%S')
-            result[STR_VALUE] = 0
-            for vout_item in result.get(STR_VOUT):
-                result[STR_VALUE] = result[STR_VALUE] + vout_item.get(STR_VALUE) 
+        if json_tx:
+            result = json.loads(json_tx)
+            result[ATTRIBUTE_RECEIVED_AT] = datetime.strptime(result.get(ATTRIBUTE_TIME_RECEIVED), '%Y-%m-%d %H:%M:%S')
+            result[ATTRIBUTE_VALUE] = 0
+            for vout_item in result.get(ATTRIBUTE_VOUT):
+                result[ATTRIBUTE_VALUE] = result[ATTRIBUTE_VALUE] + vout_item.get(ATTRIBUTE_VALUE) 
         return result
 
-    def __print_loading_message__(self, data):
+    def __print_loading_message__(self, loaded):
         print "Done loading transactions"
 
     def __print_pushing_message__(self,  pushed):
@@ -77,5 +78,5 @@ if __name__ == '__main__':
     print "Environment:" , env_setting
     session = set_session(env_setting=env_setting)
     pusher = TransactionPusher(session=session)
-    pusher.update_db_transactions()
+    pusher.start()
     

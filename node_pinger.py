@@ -12,8 +12,8 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import sys
 from models import Node, NodeActivity
-from constants import STR_ACTIVE, STR_INACTIVE, PINGER_POOL_SIZE, STR_IP_ADDRESS, \
-    STR_PORT, STR_STATUS
+from constants import ATTRIBUTE_ACTIVE, ATTRIBUTE_INACTIVE, DEFAULT_PINGER_POOL_SIZE, ATTRIBUTE_IP_ADDRESS, \
+    ATTRIBUTE_PORT, ATTRIBUTE_STATUS
 import threading
 import threadpool
 import time
@@ -80,7 +80,7 @@ def __test_node_pinger__(session):
     ip = "107.170.211.10"
     port = 8333 
     pinger = NodePinger(session=session)
-    node = {STR_IP_ADDRESS : ip, STR_PORT : port} 
+    node = {ATTRIBUTE_IP_ADDRESS : ip, ATTRIBUTE_PORT : port} 
     pinger.update_db_node_activity(node)
        
 class NetworkActivity():
@@ -94,7 +94,7 @@ class NodePinger():
     def __init__(self, session):
         self.session = session
         self.lock = threading.Lock()
-        self.pool = threadpool.ThreadPool(PINGER_POOL_SIZE)
+        self.pool = threadpool.ThreadPool(DEFAULT_PINGER_POOL_SIZE)
         self.activities = []
         
     def __get_last_node_activity_record__(self, address):
@@ -119,7 +119,7 @@ class NodePinger():
         try:
             result = self.session.query(Node).filter(Node.user_agent.isnot(None)).\
                 add_columns(Node.user_agent, Node.ip_address, Node.port, Node.address)
-            #result = [{STR_ADDRESS: node.address, STR_IP_ADDRESS:node.ip_address, STR_PORT:node.port} for node in nodes]
+            #result = [{ATTRIBUTE_ADDRESS: node.address, ATTRIBUTE_IP_ADDRESS:node.ip_address, ATTRIBUTE_PORT:node.port} for node in nodes]
         except Exception ,e:
             print e
         finally:
@@ -127,15 +127,15 @@ class NodePinger():
         return result
 
     def __boolean_to_activity_string__(self, active=False):
-        return STR_ACTIVE if active else STR_INACTIVE     
+        return ATTRIBUTE_ACTIVE if active else ATTRIBUTE_INACTIVE     
         
     def update_db_node_activity(self, node):
         # 1. Get status
-        is_active = is_node_active(ip_address=node.get(STR_IP_ADDRESS), port=node.get(STR_PORT))
+        is_active = is_node_active(ip_address=node.get(ATTRIBUTE_IP_ADDRESS), port=node.get(ATTRIBUTE_PORT))
         is_active_str = self.__boolean_to_activity_string__(is_active)
         
         # 2. Add NetworkActivity to the shared list self.activities
-        activity = NetworkActivity(ip_address = node.get(STR_IP_ADDRESS), port = node.get(STR_PORT), status = is_active_str)
+        activity = NetworkActivity(ip_address = node.get(ATTRIBUTE_IP_ADDRESS), port = node.get(ATTRIBUTE_PORT), status = is_active_str)
         self.lock.acquire(True)
         self.activities.append(activity)
         self.lock.release()
@@ -149,7 +149,7 @@ class NodePinger():
                     address = "%s:%s" % (activity.ip_address, activity.port)
                     #1. Get last status
                     last_activity = self.__get_last_node_activity_record__(address=address)
-                    if not last_activity or not activity.status == last_activity.get(STR_STATUS):
+                    if not last_activity or not activity.status == last_activity.get(ATTRIBUTE_STATUS):
                         print "Add: ", activity.ip_address, activity.status
                         node_activity = NodeActivity(address=address,status=activity.status)
                         # Add to DB

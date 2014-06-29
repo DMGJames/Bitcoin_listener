@@ -4,10 +4,10 @@ Created on Jun 26, 2014
 @author: webber
 '''
 from os.path import os, sys
-from constants import MAI_REDIS_PASSWORD, STR_DISCOVERED_TXS, STR_TX_DISCOVERED,\
-    STR_CHANNEL, STR_MESSAGE, STR_TYPE, STR_TXID, STR_RELAYED_FROM,\
-    STR_RECEIVED_AT, STR_TIME_RECEIVED, STR_VALUE, STR_VOUT,\
-    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, RESOLVING_POOL_SIZE
+from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_CHANNEL,\
+    ATTRIBUTE_CHANNEL, ATTRIBUTE_MESSAGE, ATTRIBUTE_TYPE, ATTRIBUTE_TXID, ATTRIBUTE_RELAYED_FROM,\
+    ATTRIBUTE_RECEIVED_AT, ATTRIBUTE_TIME_RECEIVED, ATTRIBUTE_VALUE, ATTRIBUTE_VOUT,\
+    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, DEFAULT_RESOLVING_POOL_SIZE
 import redis
 import threading
 import threadpool
@@ -17,8 +17,8 @@ class Pusher(object):
     def __init__(self, session, channel, queue,
                  batch_size = DEFAULT_LOADING_BATCH_SIZE,
                  sleep_time = DEFAULT_SLEEP_TIME,
-                 password = MAI_REDIS_PASSWORD,
-                 pool_size = RESOLVING_POOL_SIZE):
+                 password = DEFAULT_MAI_REDIS_PASSWORD,
+                 pool_size = DEFAULT_RESOLVING_POOL_SIZE):
         self.session = session
         self.channel = channel
         self.queue = queue
@@ -29,10 +29,10 @@ class Pusher(object):
         self.print_lock = threading.Lock()
 
         try:
-            self.redis_connection =  redis.StrictRedis(password = password)
+            self.redis_connection = redis.StrictRedis(password=password)
             self.redis_connection.ping()
         except:
-            self.redis_connection =  redis.StrictRedis()
+            self.redis_connection = redis.StrictRedis()
 
     def set_channel(channel):
         self.channel = channel
@@ -61,29 +61,26 @@ class Pusher(object):
         pubsub = self.redis_connection.pubsub()
         pubsub.subscribe(self.channel)
         for msg in pubsub.listen():
-            if msg[STR_CHANNEL] == self.channel and msg[STR_TYPE] == STR_MESSAGE:
+            if msg[ATTRIBUTE_CHANNEL] == self.channel and msg[ATTRIBUTE_TYPE] == ATTRIBUTE_MESSAGE:
                 self.load_and_push()
         return 0
 
-    def __load_and_push__(self, dummy):
-        print "Start a thread of load_and_push..."
+    def __load_and_push_thread__(self, dummy):
+        print "Start __load_and_push_thread__..."
         while self.__has_pending_data__():
             data = self.load_data()
             data = self.process_data(data)
             self.push_data_to_db(data)
-            print "sleep ", self.sleep_time
-            time.sleep(self.sleep_time)
 
     def load_and_push(self):
         while self.__has_pending_data__():
             while self.__has_heavy_load__():
                 print "workers : queue size ==>",len(self.pool.workers), self.pool._requests_queue.qsize()
-                print "sleep 10"
-                time.sleep(10)
-            requests = threadpool.makeRequests(self.__load_and_push__, [0])
+                print "sleep ", self.sleep_time
+                time.sleep(self.sleep_time)
+            requests = threadpool.makeRequests(self.__load_and_push_thread__, [0])
             try:
                 for req in requests: self.pool.putRequest(req)
-                #self.pool.wait()
             except Exception, e:
                 print "Exception on request:", e
 
@@ -97,16 +94,10 @@ class Pusher(object):
         return result
 
     def process_data(self, data):
-        """
-        You must override this method when you subclass Loader or it will
-        do nothing but return the date by default
-        """
+        # template method
         return data
 
     def push_data_to_db(self, data):
-        """
-        You must override this method when you subclass Loader.
-        """
         self.lock.acquire(True)
         try:
             for datum in data:
@@ -125,14 +116,10 @@ class Pusher(object):
         return self.pool._requests_queue.qsize() > len(self.pool.workers)
 
     def __print_loading_message__(self, loaded):
-        """
-        You may override this method when you subclass Loader.
-        """
+        # template method
         print "Done loading data"
 
     def __print_pushing_message__(self, pushed):
-        """
-        You may override this method when you subclass Loader.
-        """
+        # template method
         print "Done pushing data"
 

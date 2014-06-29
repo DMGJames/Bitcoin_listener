@@ -2,7 +2,7 @@
 '''
 Created on Jun 15, 2014
 
-@author: yutelin
+@author: yutelin, webber
 '''
 from utils.daemon_utils import Daemon
 from node_pusher import NodePusher
