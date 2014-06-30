@@ -3,10 +3,8 @@ Created on Jun 26, 2014
 
 @author: webber
 '''
-from os.path import os, sys
-from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_CHANNEL,\
-    ATTRIBUTE_CHANNEL, ATTRIBUTE_MESSAGE, ATTRIBUTE_TYPE, ATTRIBUTE_TXID, ATTRIBUTE_RELAYED_FROM,\
-    ATTRIBUTE_RECEIVED_AT, ATTRIBUTE_TIME_RECEIVED, ATTRIBUTE_VALUE, ATTRIBUTE_VOUT,\
+from constants import DEFAULT_MAI_REDIS_PASSWORD,\
+    ATTRIBUTE_CHANNEL, ATTRIBUTE_MESSAGE, ATTRIBUTE_TYPE,\
     DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, DEFAULT_RESOLVING_POOL_SIZE
 import redis
 import threading
@@ -34,22 +32,22 @@ class Pusher(object):
         except:
             self.redis_connection = redis.StrictRedis()
 
-    def set_channel(channel):
+    def set_channel(self, channel):
         self.channel = channel
 
-    def set_queue(queue):
+    def set_queue(self, queue):
         self.queue = queue
 
-    def set_batch_size(batch_size):
+    def set_batch_size(self, batch_size):
         self.batch_size = batch_size
 
-    def set_session(session):
+    def set_session(self, session):
         self.session = session
 
-    def set_sleep_time(sleep_time):
+    def set_sleep_time(self, sleep_time):
         self.sleep_time = sleep_time
 
-    def set_pool_size(pool_size):
+    def set_pool_size(self, pool_size):
         self.pool_size = pool_size
 
     def start(self):

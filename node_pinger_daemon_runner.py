@@ -4,13 +4,10 @@ Created on Jun 17, 2014
 
 @author: yutelin
 '''
-import ConfigParser
 import os
 from os.path import sys
 from constants import NODE_PINGER_DAEMON_LOG_DIR, NODE_PINGER_DAEMON_STDOUT,\
     NODE_PINGER_DAEMON_STDERR, NODE_PINGER_DAEMON_PID_FILE
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm.session import sessionmaker
 from node_pinger import NodePinger
 from utils.daemon_utils import Daemon
 import time

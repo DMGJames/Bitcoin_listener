@@ -8,9 +8,6 @@ from utils.daemon_utils import Daemon
 from node_pusher import NodePusher
 import os
 import sys
-import ConfigParser
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm.session import sessionmaker
 from constants import NODE_PUSHER_DAEMON_PID_FILE, NODE_PUSHER_DAEMON_STDOUT,\
     NODE_PUSHER_DAEMON_STDERR, NODE_PUSHER_DAEMON_LOG_DIR
 from common import set_session

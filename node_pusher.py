@@ -6,9 +6,8 @@ Created on Jun 12, 2014
 import os
 import json
 import ConfigParser
-import redis
 from constants import DEFAULT_NODE_QUEUE,\
-    DEFAULT_NODE_CHANNEL, ATTRIBUTE_CHANNEL, ATTRIBUTE_TYPE, ATTRIBUTE_MESSAGE, DEFAULT_RESOLVING_POOL_SIZE,\
+    DEFAULT_NODE_CHANNEL, DEFAULT_RESOLVING_POOL_SIZE,\
     DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME,\
     FILENAME_STATE_CFG, ATTRIBUTE_LAST_NODE_TIMESTAMP, ATTRIBUTE_TIMESTAMP,\
     ATTRIBUTE_NODE, ATTRIBUTE_COUNTRY, ATTRIBUTE_HOSTNAME, ATTRIBUTE_LATITUDE, ATTRIBUTE_LONGITUDE,\
@@ -18,12 +17,16 @@ import node_resolver
 import math
 import time
 import gevent
-import threading
-import threadpool
 from models import Node
 from pusher import Pusher
+from common import set_session
+import sys
 
-
+def set_env():
+    # 1. Append current file directory as path
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    sys.path.append(file_dir)
+    
 class NodePusher(Pusher):
     def __init__(self, session,
                  channel = DEFAULT_NODE_CHANNEL,

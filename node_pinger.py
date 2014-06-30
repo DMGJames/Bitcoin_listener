@@ -7,9 +7,6 @@ Created on Jun 16, 2014
 from bitnodes.protocol import Connection
 import socket
 import os
-import ConfigParser
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm.session import sessionmaker
 import sys
 from models import Node, NodeActivity
 from constants import ATTRIBUTE_ACTIVE, ATTRIBUTE_INACTIVE, DEFAULT_PINGER_POOL_SIZE, ATTRIBUTE_IP_ADDRESS, \
@@ -140,12 +137,12 @@ class NodePinger():
         self.activities.append(activity)
         self.lock.release()
 
-    def __update_db_with_activities__(self, activities):
-        if activities:
-            print "\n\n================================[Update db]:", len(activities)
+    def __update_db_with_activities__(self):
+        if self.activities:
+            print "\n\n================================[Update db]:", len(self.activities)
             try:
                 add_count = 0
-                for activity in activities:
+                for activity in self.activities:
                     address = "%s:%s" % (activity.ip_address, activity.port)
                     #1. Get last status
                     last_activity = self.__get_last_node_activity_record__(address=address)
@@ -163,7 +160,7 @@ class NodePinger():
                 self.session.rollback()
             finally:
                 self.session.close()
-
+        self.activities = []
             
     def update_db_all_node_activities(self):
         try:
@@ -177,10 +174,11 @@ class NodePinger():
                 node_dict = node.__dict__
                 while self.pool._requests_queue.qsize() > len(self.pool.workers) :
                     self.pool.wait()
-                    self.__update_db_with_activities__(self.activities)
-                    self.activities = []
+                    self.__update_db_with_activities__()
                 requests = threadpool.makeRequests(self.update_db_node_activity, [node_dict])
                 for req in requests: self.pool.putRequest(req)
+            self.pool.wait()
+            self.__update_db_with_activities__()
         except Exception, e:
             print "Exception on running \"update_db_all_node_activities\":", e
         

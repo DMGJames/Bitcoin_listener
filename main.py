@@ -8,11 +8,6 @@ import os
 from os.path import sys
 import getopt
 from node_pusher import NodePusher
-import ConfigParser
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm.session import sessionmaker
-import node_loader
-from node_loader import NodeLoader
 from common import set_session
 
 env_setting = "local"
@@ -45,9 +40,8 @@ def update_db_nodes(node_file, session):
         node_pusher = NodePusher(session=session)
         node_pusher.update_db_nodes(file_path = node_file)
     else :
-        node_pusher = NodePusher(session=session)
-        node_loader = NodeLoader()
-        node_loader.load_and_push_nodes(node_pusher = node_pusher)
+        pusher = NodePusher(session=session)
+        pusher.start()
 
 if __name__ == '__main__':
     set_env()
