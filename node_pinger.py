@@ -7,18 +7,16 @@ Created on Jun 16, 2014
 from bitnodes.protocol import Connection
 import socket
 import os
-import ConfigParser
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm.session import sessionmaker
 import sys
 from models import Node, NodeActivity
-from constants import STR_ACTIVE, STR_INACTIVE, PINGER_POOL_SIZE, STR_IP_ADDRESS, \
-    STR_PORT, STR_STATUS
+from constants import ATTRIBUTE_ACTIVE, ATTRIBUTE_INACTIVE, DEFAULT_PINGER_POOL_SIZE, ATTRIBUTE_IP_ADDRESS, \
+    ATTRIBUTE_PORT, ATTRIBUTE_STATUS
 import threading
 import threadpool
 import time
 import MySQLdb
 import traceback
+from common import set_session
 
 def is_node_active(ip_address, port):
     connection = Connection((ip_address, port))
@@ -55,23 +53,6 @@ def set_env():
     # 1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))
     sys.path.append(file_dir)
-    
-def set_session(env_setting='local'):    
-    # 2. Load db config
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    file_name = "alembic_%s.ini" % env_setting
-    db_config_file = os.path.join(file_dir, file_name)
-    config = ConfigParser.ConfigParser()
-    config.read(db_config_file)
-    
-    # 3. Set SQLAlchemy db engine
-    db_engine = config.get('alembic', 'sqlalchemy.url')
-    
-    # 4. Configure SQLAlchemy session
-    engine = create_engine(db_engine)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    return session
 
 def __test_ping__():
     ip = "107.170.211.10"
@@ -96,7 +77,7 @@ def __test_node_pinger__(session):
     ip = "107.170.211.10"
     port = 8333 
     pinger = NodePinger(session=session)
-    node = {STR_IP_ADDRESS : ip, STR_PORT : port} 
+    node = {ATTRIBUTE_IP_ADDRESS : ip, ATTRIBUTE_PORT : port} 
     pinger.update_db_node_activity(node)
        
 class NetworkActivity():
@@ -107,11 +88,10 @@ class NetworkActivity():
         self.status = status
     
 class NodePinger():
-    def __init__(self, session_fn):
-        self.session_fn = session_fn
-        self.session = self.session_fn()
+    def __init__(self, session):
+        self.session = session
         self.lock = threading.Lock()
-        self.pool = threadpool.ThreadPool(PINGER_POOL_SIZE)
+        self.pool = threadpool.ThreadPool(DEFAULT_PINGER_POOL_SIZE)
         self.activities = []
         
     def __get_last_node_activity_record__(self, address):
@@ -136,7 +116,7 @@ class NodePinger():
         try:
             result = self.session.query(Node).filter(Node.user_agent.isnot(None)).\
                 add_columns(Node.user_agent, Node.ip_address, Node.port, Node.address)
-            #result = [{STR_ADDRESS: node.address, STR_IP_ADDRESS:node.ip_address, STR_PORT:node.port} for node in nodes]
+            #result = [{ATTRIBUTE_ADDRESS: node.address, ATTRIBUTE_IP_ADDRESS:node.ip_address, ATTRIBUTE_PORT:node.port} for node in nodes]
         except Exception ,e:
             print e
         finally:
@@ -144,29 +124,29 @@ class NodePinger():
         return result
 
     def __boolean_to_activity_string__(self, active=False):
-        return STR_ACTIVE if active else STR_INACTIVE     
+        return ATTRIBUTE_ACTIVE if active else ATTRIBUTE_INACTIVE     
         
     def update_db_node_activity(self, node):
         # 1. Get status
-        is_active = is_node_active(ip_address=node.get(STR_IP_ADDRESS), port=node.get(STR_PORT))
+        is_active = is_node_active(ip_address=node.get(ATTRIBUTE_IP_ADDRESS), port=node.get(ATTRIBUTE_PORT))
         is_active_str = self.__boolean_to_activity_string__(is_active)
         
         # 2. Add NetworkActivity to the shared list self.activities
-        activity = NetworkActivity(ip_address = node.get(STR_IP_ADDRESS), port = node.get(STR_PORT), status = is_active_str)
+        activity = NetworkActivity(ip_address = node.get(ATTRIBUTE_IP_ADDRESS), port = node.get(ATTRIBUTE_PORT), status = is_active_str)
         self.lock.acquire(True)
         self.activities.append(activity)
         self.lock.release()
 
-    def __update_db_with_activities__(self, activities):
-        if activities:
-            print "\n\n================================[Update db]:", len(activities)
+    def __update_db_with_activities__(self):
+        if self.activities:
+            print "\n\n================================[Update db]:", len(self.activities)
             try:
                 add_count = 0
-                for activity in activities:
+                for activity in self.activities:
                     address = "%s:%s" % (activity.ip_address, activity.port)
                     #1. Get last status
                     last_activity = self.__get_last_node_activity_record__(address=address)
-                    if not last_activity or not activity.status == last_activity.get(STR_STATUS):
+                    if not last_activity or not activity.status == last_activity.get(ATTRIBUTE_STATUS):
                         print "Add: ", activity.ip_address, activity.status
                         node_activity = NodeActivity(address=address,status=activity.status)
                         # Add to DB
@@ -180,7 +160,7 @@ class NodePinger():
                 self.session.rollback()
             finally:
                 self.session.close()
-
+        self.activities = []
             
     def update_db_all_node_activities(self):
         try:
@@ -194,10 +174,11 @@ class NodePinger():
                 node_dict = node.__dict__
                 while self.pool._requests_queue.qsize() > len(self.pool.workers) :
                     self.pool.wait()
-                    self.__update_db_with_activities__(self.activities)
-                    self.activities = []              
+                    self.__update_db_with_activities__()
                 requests = threadpool.makeRequests(self.update_db_node_activity, [node_dict])
                 for req in requests: self.pool.putRequest(req)
+            self.pool.wait()
+            self.__update_db_with_activities__()
         except Exception, e:
             print "Exception on running \"update_db_all_node_activities\":", e
         
@@ -205,10 +186,10 @@ if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
-    session_fn = set_session(env_setting=env_setting)
+    session = set_session(env_setting=env_setting)
 #     __test_ping__()
 #     __test_db_query__(session = session)
 #     __test_node_pinger__(session = session)
-    node_pinger = NodePinger(session_fn=session_fn)
+    node_pinger = NodePinger(session=session)
     node_pinger.update_db_all_node_activities()
 #     session.close()

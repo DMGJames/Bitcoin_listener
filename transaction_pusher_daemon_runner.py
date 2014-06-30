@@ -13,13 +13,13 @@ from constants import TX_PUSHER_DAEMON_PID_FILE, TX_PUSHER_DAEMON_STDOUT,\
 from common import set_session
 
 class TransactionPusherDaemon(Daemon):
-    def set_session_fn(self, session_fn):
-        self.session_fn = session_fn
+    def set_session(self, session):
+        self.session = session
         
     def run(self):
         print "Start TransactionPusherDaemon"
-        pusher = TransactionPusher(session_fn = self.session_fn)
-        pusher.update_db_transactions()
+        pusher = TransactionPusher(session = self.session)
+        pusher.start()
         print "End TransactionPusherDaemon"
 
 def set_env():
@@ -38,8 +38,8 @@ if __name__ == '__main__':
         daemon = TransactionPusherDaemon(pidfile=TX_PUSHER_DAEMON_PID_FILE, 
                               stdout=TX_PUSHER_DAEMON_STDOUT, 
                               stderr=TX_PUSHER_DAEMON_STDERR)
-        session_fn = set_session(env_setting=env_setting)
-        daemon.set_session_fn(session_fn = session_fn)
+        session = set_session(env_setting=env_setting)
+        daemon.set_session(session = session)
         if 'start' == sys.argv[1]:
             print "start"
             daemon.start()

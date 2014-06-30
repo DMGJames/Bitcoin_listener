@@ -5,10 +5,10 @@ Created on Jun 11, 2014
 '''
 import pygeoip
 from decimal import Decimal
-from constants import STR_COUNTRY_CODE, STR_LATITUDE, STR_LONGITUDE,\
-    STR_TIME_ZONE, STR_CITY, FILENAME_GEO_CITY, FILENAME_GEO_CITY_V6,\
-    FILENAME_GEO_ASN, FILENAME_GEO_ASN_V6, STR_COUNTRY, STR_ASN, STR_ORG,\
-    STR_HOSTNAME, STR_USER_AGENT, STR_VERSION, STR_START_HEIGHT
+from constants import ATTRIBUTE_COUNTRY_CODE, ATTRIBUTE_LATITUDE, ATTRIBUTE_LONGITUDE,\
+    ATTRIBUTE_TIME_ZONE, ATTRIBUTE_CITY, FILENAME_GEO_CITY, FILENAME_GEO_CITY_V6,\
+    FILENAME_GEO_ASN, FILENAME_GEO_ASN_V6, ATTRIBUTE_COUNTRY, ATTRIBUTE_ASN, ATTRIBUTE_ORG,\
+    ATTRIBUTE_HOSTNAME, ATTRIBUTE_USER_AGENT, ATTRIBUTE_VERSION, ATTRIBUTE_START_HEIGHT
 import socket
 import logging
 from bitnodes.protocol import Connection, ProtocolError
@@ -40,11 +40,11 @@ def __get_raw_geoip__(address):
     else:
         geoip_record = GEOIP4.record_by_addr(address)
     if geoip_record:
-        city = geoip_record[STR_CITY]
-        country = geoip_record[STR_COUNTRY_CODE]
-        latitude = float(Decimal(geoip_record[STR_LATITUDE]).quantize(prec))
-        longitude = float(Decimal(geoip_record[STR_LONGITUDE]).quantize(prec))
-        timezone = geoip_record[STR_TIME_ZONE]
+        city = geoip_record[ATTRIBUTE_CITY]
+        country = geoip_record[ATTRIBUTE_COUNTRY_CODE]
+        latitude = float(Decimal(geoip_record[ATTRIBUTE_LATITUDE]).quantize(prec))
+        longitude = float(Decimal(geoip_record[ATTRIBUTE_LONGITUDE]).quantize(prec))
+        timezone = geoip_record[ATTRIBUTE_TIME_ZONE]
 
     asn_record = None
     if ":" in address:
@@ -57,9 +57,9 @@ def __get_raw_geoip__(address):
         if len(data) > 1:
             org = data[1]
 
-    return {STR_CITY: city, STR_COUNTRY: country, STR_LATITUDE: latitude, 
-            STR_LONGITUDE: longitude, STR_TIME_ZONE: timezone, 
-            STR_ASN: asn, STR_ORG: org}
+    return {ATTRIBUTE_CITY: city, ATTRIBUTE_COUNTRY: country, ATTRIBUTE_LATITUDE: latitude, 
+            ATTRIBUTE_LONGITUDE: longitude, ATTRIBUTE_TIME_ZONE: timezone, 
+            ATTRIBUTE_ASN: asn, ATTRIBUTE_ORG: org}
     
 def __get_raw_hostname__(address):
     """
@@ -71,7 +71,7 @@ def __get_raw_hostname__(address):
         hostname = socket.gethostbyaddr(address)[0]
     except (socket.gaierror, socket.herror) as err:
         logging.debug("{}: {}".format(address, err))
-    return {STR_HOSTNAME: hostname}
+    return {ATTRIBUTE_HOSTNAME: hostname}
 
 
 def __get_bitcoin_node_info__(address, port):
@@ -84,14 +84,14 @@ def __get_bitcoin_node_info__(address, port):
         connection.open()
         handshake_msgs = connection.handshake()
         if handshake_msgs and len(handshake_msgs) > 1:
-            user_agent = handshake_msgs[0].get(STR_USER_AGENT)
-            version =  handshake_msgs[0].get(STR_VERSION)
-            start_height = handshake_msgs[0].get(STR_START_HEIGHT) 
+            user_agent = handshake_msgs[0].get(ATTRIBUTE_USER_AGENT)
+            version =  handshake_msgs[0].get(ATTRIBUTE_VERSION)
+            start_height = handshake_msgs[0].get(ATTRIBUTE_START_HEIGHT) 
     except (ProtocolError, socket.error) as err:
         logging.debug("Closing {} ({})".format(connection.to_addr, err))
         connection.close()
 
-    return {STR_USER_AGENT : user_agent, STR_VERSION: version, STR_START_HEIGHT:  start_height}
+    return {ATTRIBUTE_USER_AGENT : user_agent, ATTRIBUTE_VERSION: version, ATTRIBUTE_START_HEIGHT:  start_height}
 
 def get_node_info(address, port):
     geo_data = __get_raw_geoip__(address = address)
