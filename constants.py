@@ -71,6 +71,11 @@ TX_POST_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction-post-process')
 TX_POST_DAEMON_STDOUT = os.path.join(TX_POST_DAEMON_LOG_DIR, 'transaction-post-process.log')
 TX_POST_DAEMON_STDERR = os.path.join(TX_POST_DAEMON_LOG_DIR, 'transaction-post-process-err.log')
 
+TX_PATCH_DAEMON_PID_FILE = '/tmp/transaction-patch.pid'
+TX_PATCH_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction-patch')
+TX_PATCH_DAEMON_STDOUT = os.path.join(TX_PATCH_DAEMON_LOG_DIR, 'transaction-patch.log')
+TX_PATCH_DAEMON_STDERR = os.path.join(TX_PATCH_DAEMON_LOG_DIR, 'transaction-patch.log')
+
 
 DEFAULT_LOADING_BATCH_SIZE      = 5
 DEFAULT_SLEEP_TIME              = 0.5
