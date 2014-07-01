@@ -254,6 +254,44 @@ end script
 
 ```
 
+### Transaction Post Process Daemon
+Test:
+
+```
+python tx/transaction_post_process_daemon_runner.py start local
+
+```
+Add the following in sudo vi /etc/init/transaction_post_process.conf
+
+```
+adescription "transaction_post_process"
+
+start on filesystem
+stop on runlevel [!2345]
+oom never
+expect daemon
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+user=ubuntu
+home=/home/$user
+cmd=/home/$user/listener_pusher/tx/transaction_post_process_daemon_runner.py
+pidfile=$home/listener_pusher/transaction_post_process.pid
+###### Don't change anything below here unless you know what you're doing
+[[ -e $pidfile && ! -d "/proc/$(cat $pidfile)" ]] && rm $pidfile
+[[ -e $pidfile && "$(cat /proc/$(cat $pidfile)/cmdline)" != $cmd* ]] && rm $pidfile
+exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m --startas $cmd -- start test
+end script
+
+```
+
+### Transaction Post Process Cron Job
+```
+crontab -e
+15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
+```
+
 
 ### GeoIP update cron job
 ```
@@ -261,3 +299,13 @@ crontab -e
 # Add this line
 0 18 * * 1 cd /home/ubuntu/listener_pusher/geoip/ && ./update.sh
 ```
+
+### Patch
+#### Add transaction type
+Fill type filed in transaction model
+`python patch/add_transaction_type.py local`
+
+### Post process
+#### Transaction post process
+Update block_height in transacion
+'python tx/transaction_post_process.py local'

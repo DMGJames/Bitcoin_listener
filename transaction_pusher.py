@@ -8,7 +8,8 @@ from common import set_session
 from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_CHANNEL,\
     ATTRIBUTE_CHANNEL, ATTRIBUTE_MESSAGE, ATTRIBUTE_TYPE, ATTRIBUTE_TXID, ATTRIBUTE_RELAYED_FROM,\
     ATTRIBUTE_RECEIVED_AT, ATTRIBUTE_TIME_RECEIVED, ATTRIBUTE_VALUE, ATTRIBUTE_VOUT,\
-    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, DEFAULT_RESOLVING_POOL_SIZE
+    DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME, DEFAULT_RESOLVING_POOL_SIZE,\
+    ATTRIBUTE_SCRIPT_PUB_KEY
 import redis
 import json
 from models import Transaction, TransactionInfo
@@ -38,7 +39,9 @@ class TransactionPusher(Pusher):
         for json_tx in json_txs:
             dict_tx = self.__json_tx_to_dict_tx__(json_tx)
             tx = Transaction(txid = dict_tx.get(ATTRIBUTE_TXID),
-                             value = dict_tx.get(ATTRIBUTE_VALUE))
+                             value = dict_tx.get(ATTRIBUTE_VALUE),
+                             type = dict_tx.get(ATTRIBUTE_TYPE)
+                             )
             result.append(tx)
 
             tx_info = TransactionInfo(txid = dict_tx.get(ATTRIBUTE_TXID),
@@ -55,7 +58,10 @@ class TransactionPusher(Pusher):
             result[ATTRIBUTE_RECEIVED_AT] = datetime.strptime(result.get(ATTRIBUTE_TIME_RECEIVED), '%Y-%m-%d %H:%M:%S')
             result[ATTRIBUTE_VALUE] = 0
             for vout_item in result.get(ATTRIBUTE_VOUT):
-                result[ATTRIBUTE_VALUE] = result[ATTRIBUTE_VALUE] + vout_item.get(ATTRIBUTE_VALUE) 
+                result[ATTRIBUTE_VALUE] = result[ATTRIBUTE_VALUE] + vout_item.get(ATTRIBUTE_VALUE)
+            if not result.get(ATTRIBUTE_TYPE) and vout_item.get(ATTRIBUTE_SCRIPT_PUB_KEY):
+                result[ATTRIBUTE_TYPE] = vout_item.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_TYPE)
+ 
         return result
 
     def __print_loading_message__(self, loaded):

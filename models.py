@@ -39,6 +39,8 @@ class Transaction(Base):
     txid            = Column(String(250),primary_key=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
+    type            = Column(String(250), index=True)
+    block_height    = Column(Integer, index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction:", self.txid

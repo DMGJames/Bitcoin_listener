@@ -1,5 +1,5 @@
 namespace :listener_pusher do
-  desc "Install listener_pusher packages"
+  desc "Install listener_pusher packages. Note: this will overwrite all other cron jobs!!"
   task :setup => [:install_dependencies, :add_cron_job]
   
   task :install_dependencies do
@@ -67,6 +67,23 @@ namespace :listener_pusher do
       sudo "mv #{conf_path} /etc/init/node_pinger.conf"
       sudo "initctl reload-configuration"
       execute "cd #{fetch(:deploy_to)}/current && python node_pinger_daemon_runner.py restart test"
+    end
+  end
+
+  desc "Add transaction post process cron job. Note: this will overwrite all other cron jobs!!"
+  task :add_tx_post_cron_job do
+    on roles(:all) do |host|
+      cron_job = "1 18 * * 1 cd #{fetch(:deploy_to)}/current/ && tx/transaction_post_process.py  test >> #{fetch(:deploy_to)}/current/tx_post_process.log"
+      config = ""
+      begin
+        config = capture(%Q{crontab -l 2>&1}).split "\n"
+      rescue Exception => e
+        info "Exception on execute crontab -l"
+      end
+      info "Current cron jobs:#{config}"
+      unless config.include? cron_job
+        execute %Q{echo "#{cron_job}" | crontab -}
+      end
     end
   end
 end

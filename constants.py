@@ -38,7 +38,10 @@ ATTRIBUTE_TIME_RECEIVED           = "timeReceived"
 ATTRIBUTE_RECEIVED_AT             = "received_at"
 ATTRIBUTE_VALUE                   = "value"
 ATTRIBUTE_VOUT                    = "vout"
-
+ATTRIBUTE_SCRIPT_PUB_KEY          = "scriptPubKey"
+ATTRIBUTE_BLOCK_HEIGHT            = "block_height"
+ATTRIBUTE_BLOCKHASH               = "blockhash"
+ATTRIBUTE_HEIGHT                  = "height"
 
 FILENAME_STATE_CFG          = 'state.cfg'
 FILENAME_GEO_CITY           = "geoip/GeoLiteCity.dat"
@@ -63,6 +66,11 @@ TX_PUSHER_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction_pusher')
 TX_PUSHER_DAEMON_STDOUT = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher.log')
 TX_PUSHER_DAEMON_STDERR = os.path.join(TX_PUSHER_DAEMON_LOG_DIR, 'transaction-pusher-err.log')
 
+TX_POST_DAEMON_PID_FILE = '/tmp/transaction-post-process-daemon.pid'
+TX_POST_DAEMON_LOG_DIR = os.path.join(file_dir, 'log/transaction-post-process')
+TX_POST_DAEMON_STDOUT = os.path.join(TX_POST_DAEMON_LOG_DIR, 'transaction-post-process.log')
+TX_POST_DAEMON_STDERR = os.path.join(TX_POST_DAEMON_LOG_DIR, 'transaction-post-process-err.log')
+
 
 DEFAULT_LOADING_BATCH_SIZE      = 5
 DEFAULT_SLEEP_TIME              = 0.5
@@ -73,3 +81,4 @@ DEFAULT_NODE_QUEUE              = "discovered_nodes"
 DEFAULT_NODE_CHANNEL            = "node_discovered"
 DEFAULT_TX_QUEUE                = "discovered_txs"
 DEFAULT_TX_CHANNEL              = "tx_discovered"
+DEFAULT_BITCOND_RPC_URL         = "http://bitcoinrpc:teammaicoin@10.146.158.130:8332"
