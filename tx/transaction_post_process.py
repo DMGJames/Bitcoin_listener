@@ -44,6 +44,7 @@ class TransactionPostProcess():
     
     def __get_block_height_via_rpc__(self, txid):
         result = None
+        rpc_tx = blockhash = block = height = None
         try:
             access = AuthServiceProxy(DEFAULT_BITCOND_RPC_URL)
             rpc_tx = access.getrawtransaction(txid, 1)
@@ -52,7 +53,7 @@ class TransactionPostProcess():
             height = block.get(ATTRIBUTE_HEIGHT)
             result =  height
         except Exception, e:
-            print "Exception on __get_block_height_via_rpc__:", txid, e
+            print "Exception on __get_block_height_via_rpc__:", txid, e, rpc_tx, blockhash, block, height
         return result
     
     def __get_block_height__(self, txid=None):
@@ -102,3 +103,4 @@ if __name__ == '__main__':
     update_session = set_session(env_setting=env_setting)
     post_process = TransactionPostProcess(query_session=query_session, update_session = update_session)
     post_process.run_post_process()
+    print "Done!"

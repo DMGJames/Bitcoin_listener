@@ -289,7 +289,7 @@ end script
 ### Transaction Post Process Cron Job
 ```
 crontab -e
-15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
+*/10 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
 ```
 
 
