@@ -6,7 +6,6 @@ Created on Jul 1, 2014
 ##### Set environment #####
 import os
 from os.path import sys
-from sqlalchemy.sql.expression import update
 def set_env():
     # 1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))

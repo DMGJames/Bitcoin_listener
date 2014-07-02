@@ -39,7 +39,6 @@ class Transaction(Base):
     txid            = Column(String(250),primary_key=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
-    type            = Column(String(250), index=True) #Deprecated
     block_height    = Column(Integer, index=True)
     has_multisig    = Column(Boolean, index=True)
     has_nulldata    = Column(Boolean, index=True)
