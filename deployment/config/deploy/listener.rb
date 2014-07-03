@@ -1,7 +1,7 @@
-role :app, %w{mcdeploy@54.255.4.246}
-role :web, %w{mcdeploy@54.255.4.246}
-role :db,  %w{mcdeploy@54.255.4.246}
-server '54.255.4.246', user: 'mcdeploy', roles: %w{web app}, my_property: :my_value
+role :app, %w{mcdeploy@54.179.69.232}
+role :web, %w{mcdeploy@54.179.69.232}
+role :db,  %w{mcdeploy@54.179.69.232}
+server '54.179.69.232', user: 'mcdeploy', roles: %w{web app}, my_property: :my_value
 set :application, 'listener'
 set :repo_url, 'git@github.com:huuep/listener2.git'
 set :branch, 'listener-master'

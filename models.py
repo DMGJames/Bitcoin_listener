@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, Numeric, Text
+from sqlalchemy import Column, DateTime, Integer, String, Numeric, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.sqltypes import BigInteger
@@ -39,6 +39,12 @@ class Transaction(Base):
     txid            = Column(String(250),primary_key=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
+    block_height    = Column(Integer, index=True)
+    has_multisig    = Column(Boolean, index=True)
+    has_nulldata    = Column(Boolean, index=True)
+    has_pubkey      = Column(Boolean, index=True)
+    has_pubkeyhash  = Column(Boolean, index=True)
+    has_scripthash  = Column(Boolean, index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction:", self.txid
