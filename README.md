@@ -292,6 +292,12 @@ crontab -e
 */10 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
 ```
 
+### Transaction Adddress Pusher Cron Job
+```
+crontab -e
+5 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_address_pusher.py  test >> /home/ubuntu/listener_pusher/tx_addr_pusher.log
+````
+
 
 ### GeoIP update cron job
 ```
@@ -308,4 +314,7 @@ Fill type filed in transaction model
 ### Post process
 #### Transaction post process
 Update block_height in transacion
-'python tx/transaction_post_process.py local'
+`python tx/transaction_post_process.py local`
+
+### Transaction Adddress pusher
+`python tx/transaction_address_pusher.py local`

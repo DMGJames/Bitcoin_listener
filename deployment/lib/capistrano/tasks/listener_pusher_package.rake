@@ -73,7 +73,24 @@ namespace :listener_pusher do
   desc "Add transaction post process cron job. Note: this will overwrite all other cron jobs!!"
   task :add_tx_post_cron_job do
     on roles(:all) do |host|
-      cron_job = "1 18 * * 1 cd #{fetch(:deploy_to)}/current/ && tx/transaction_post_process.py  test >> #{fetch(:deploy_to)}/current/tx_post_process.log"
+      cron_job = "*/10 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_post_process.py test >> #{fetch(:deploy_to)}/current/tx_post_process.log"
+      config = ""
+      begin
+        config = capture(%Q{crontab -l 2>&1}).split "\n"
+      rescue Exception => e
+        info "Exception on execute crontab -l"
+      end
+      info "Current cron jobs:#{config}"
+      unless config.include? cron_job
+        execute %Q{echo "#{cron_job}" | crontab -}
+      end
+    end
+  end
+
+  desc "Add transaction address pusher cron job. Note: this will overwrite all other cron jobs!!"
+  task :add_tx_addr_pusher_cron_job do
+    on roles(:all) do |host|
+      cron_job = "5 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_address_pusher.py test >> #{fetch(:deploy_to)}/current/tx_addr_pusher.log"
       config = ""
       begin
         config = capture(%Q{crontab -l 2>&1}).split "\n"

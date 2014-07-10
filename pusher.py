@@ -53,6 +53,7 @@ class Pusher(object):
     def start(self):
         self.load_and_push()
         self.listen()
+        self.pool.wait()
 
     def listen(self):
         print "Start listening..."

@@ -17,3 +17,6 @@ geoip/*.dat
 # Log
 log/*
 *.log
+
+# Backup file
+*.bak
