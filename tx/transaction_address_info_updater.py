@@ -22,7 +22,6 @@ from models import TransactionAddressInfoUpdate, TransactionOutput,\
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql.functions import func
 import threading
-from pprint import pprint
 
 class TransactionAddressInfoUpdater:
     def __init__(self, update_session, query_session, start_height, end_height):
@@ -127,6 +126,7 @@ class TransactionAddressInfoUpdater:
                    TransactionInput.vout_offset >= 0).all()
         self.query_session.close()
         print "All txn_vins:", txn_vins
+        
         #2. Get all address
         all_addresses = []
         txn_vin_vout_dict = {}
@@ -184,7 +184,7 @@ class TransactionAddressInfoUpdater:
             print "Exception on __finish_update_at_height__", e
             self.update_session.rollback()
         
-            
+    # Load all address info to map, if doesn't exist, create a new one        
     def __load_address_info_map__(self, all_addresses):
         address_info_dict = {}
         address_infos = self.query_session.query(TransactionAddressInfo).filter(TransactionAddressInfo.address.in_(all_addresses)).all()

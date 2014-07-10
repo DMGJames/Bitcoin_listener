@@ -292,12 +292,17 @@ crontab -e
 */10 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
 ```
 
-### Transaction Adddress Pusher Cron Job
+### Transaction vin vout Pusher Cron Job and info updater
 ```
 crontab -e
-5 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_address_pusher.py  test >> /home/ubuntu/listener_pusher/tx_addr_pusher.log
+*/15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py  test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log && tx/transaction_address_info_updater.py  test >> /home/ubuntu/listener_pusher/tx_address_info_updater.log
 ````
 
+### Transaction address info updater cron job (deprecated)
+```
+crontab -e
+*/30 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_address_info_updater.py  test >> /home/ubuntu/listener_pusher/tx_address_info_updater.log
+````
 
 ### GeoIP update cron job
 ```
@@ -306,6 +311,16 @@ crontab -e
 0 18 * * 1 cd /home/ubuntu/listener_pusher/geoip/ && ./update.sh
 ```
 
+### Cron job summary
+```
+0 18 * * 1 cd /home/ubuntu/listener_pusher/geoip/ && ./update.sh
+*/10 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
+crontab -e
+*/15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py  test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log
+crontab -e
+*/15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log && tx/transaction_address_info_updater.py test >> /home/ubuntu/listener_pusher/tx_address_info_updater.log
+
+```
 ### Patch
 #### Add transaction type
 Fill type filed in transaction model
