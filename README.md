@@ -286,6 +286,38 @@ end script
 
 ```
 
+### Transaction address updator daemon
+Test:
+
+```
+python tx/transaction_address_info_updater_daemon_runner.py start local
+
+```
+Add the following in sudo vi /etc/init/transaction_addr_info_update.conf
+
+```
+adescription "transaction_addr_info_update"
+
+start on filesystem
+stop on runlevel [!2345]
+oom never
+expect daemon
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+user=ubuntu
+home=/home/$user
+cmd=/home/$user/listener_pusher/tx/transaction_address_info_updater_daemon_runner.py
+pidfile=$home/listener_pusher/transaction_addr_info_update.pid
+##### Don't change anything below here unless you know what you're doing
+[[ -e $pidfile && ! -d "/proc/$(cat $pidfile)" ]] && rm $pidfile
+[[ -e $pidfile && "$(cat /proc/$(cat $pidfile)/cmdline)" != $cmd* ]] && rm $pidfile
+exec start-stop-daemon --start -c $user --chdir $home --pidfile $pidfile -b -m --startas $cmd -- start test
+end script
+
+```
+
 ### Transaction Post Process Cron Job
 ```
 crontab -e
@@ -318,8 +350,7 @@ crontab -e
 crontab -e
 */15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py  test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log
 crontab -e
-*/15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log && tx/transaction_address_info_updater.py test >> /home/ubuntu/listener_pusher/tx_address_info_updater.log
-
+*/15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log 
 ```
 ### Patch
 #### Add transaction type
@@ -331,5 +362,32 @@ Fill type filed in transaction model
 Update block_height in transacion
 `python tx/transaction_post_process.py local`
 
-### Transaction Adddress pusher
-`python tx/transaction_address_pusher.py local`
+### Transaction vin vout pusher
+`python tx/transaction_vin_vout_pusher.py local`
+
+### Transaction vin vout csv loader
+Local:
+
+- dump data:
+
+	`python tx/transaction_vin_vout_csv_loader.py local /Users/yutelin/data/TxIn.log /Users/yutelin/data/TxOut.log /Users/yutelin/data/TxIn.sql /Users/yutelin/data/TxOut.sql` 
+
+- Load data from sql:
+
+	`mysql --user=root --host=localhost --password listener < /Users/yutelin/data/TxIn.sql`
+	
+	`mysql --user=root --host=localhost --password listener < /Users/yutelin/data/TxOut.sql`
+
+Remote:
+
+- dump data:
+
+	`python tx/transaction_vin_vout_csv_loader.py test /home/ubuntu/.bitcoin/TxIn.log /home/ubuntu/.bitcoin/TxOut.log /home/ubuntu/data/TxIn.sql /home/ubuntu/data/TxOut.sql` 
+	
+- Load data from sql:
+
+	`mysql --user=maimai --host=bitcoin-data-test.clpzt5jt4i1e.ap-southeast-1.rds.amazonaws.com --password listener < /home/ubuntu/data/TxIn.sql`
+	
+	`mysql --user=maimai --host=bitcoin-data-test.clpzt5jt4i1e.ap-southeast-1.rds.amazonaws.com --password listener < /home/ubuntu/data/TxOut.sql`
+	
+	

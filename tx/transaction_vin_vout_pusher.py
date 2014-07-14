@@ -122,9 +122,6 @@ class TransactionVinVoutPusher(Pusher):
         try:
             first_item = self.query_session.query(TransactionOutput).filter(TransactionOutput.block_height==block_height).first()
             result = first_item != None
-#             count_rs = self.query_session.query(func.count(TransactionAddress)).filter(TransactionAddress.block_height==block_height).first()
-#             for count in count_rs:
-#                 result = (count[0] != 0)
             self.query_session.close()
         except Exception, e:
             self.query_session.rollback()

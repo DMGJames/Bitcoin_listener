@@ -49,15 +49,15 @@ namespace :listener do
       #execute "echo 'deb http://ftp.de.debian.org/debian squeeze main' | sudo tee -a /etc/apt/sources.list"
       sudo "apt-get -y update"
       sudo "apt-get -y upgrade"
-        sudo "apt-get install -y build-essential"
-        sudo "apt-get install -y libtool autotools-dev autoconf"
-        sudo "apt-get install -y libssl-dev"
-        sudo "apt-get install -y libboost-dev"
-        sudo "apt-get install -y libboost-all-dev"
-        sudo "add-apt-repository -y ppa:bitcoin/bitcoin"
-        sudo "apt-get -y update"
-        sudo "apt-get install -y libdb4.8-dev"
-        sudo "apt-get install -y libdb4.8++-dev"
+      sudo "apt-get install -y build-essential"
+      sudo "apt-get install -y libtool autotools-dev autoconf"
+      sudo "apt-get install -y libssl-dev"
+      sudo "apt-get install -y libboost-dev"
+      sudo "apt-get install -y libboost-all-dev"
+      sudo "add-apt-repository -y ppa:bitcoin/bitcoin"
+      sudo "apt-get -y update"
+      sudo "apt-get install -y libdb4.8-dev"
+      sudo "apt-get install -y libdb4.8++-dev"
 
       #sudo "apt-get -q -y install build-essential"
       # sudo "apt-get -q -y install libtool autotools-dev autoconf"
@@ -94,6 +94,11 @@ namespace :listener do
       unless test("[ -e #{fetch(:bitcoin_conf)} ]")
         execute "echo 'rpcuser=bitcoinrpc' >> #{fetch(:bitcoin_conf)}"
         execute "echo 'rpcpassword=151500d4d1a4750911109bf57928ec93' >> #{fetch(:bitcoin_conf)}"
+        execute "echo 'server=1' >> #{fetch(:bitcoin_conf)}"
+        execute "echo 'daemon=1' >> #{fetch(:bitcoin_conf)}"
+        execute "echo 'maxconnections=1000' >> #{fetch(:bitcoin_conf)}"
+        execute "echo 'maxoutboundconnections=500' >> #{fetch(:bitcoin_conf)}"
+        execute "echo 'connectionretrysleep=500' >> #{fetch(:bitcoin_conf)}"
       end
     end  
   end

@@ -90,7 +90,7 @@ namespace :listener_pusher do
   desc "Add transaction vin vout pusher cron job. Note: this will overwrite all other cron jobs!!"
   task :add_tx_vin_vout_pusher_cron_job do
     on roles(:all) do |host|
-      cron_job = "*/15 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_vin_vout_pusher.py test >> #{fetch(:deploy_to)}/current/tx_vin_vout_pusher.log && tx/transaction_address_info_updater.py test >> #{fetch(:deploy_to)}/current/tx_address_info_updater.log"
+      cron_job = "*/15 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_vin_vout_pusher.py test >> #{fetch(:deploy_to)}/current/tx_vin_vout_pusher.log"
       config = ""
       begin
         config = capture(%Q{crontab -l 2>&1}).split "\n"
