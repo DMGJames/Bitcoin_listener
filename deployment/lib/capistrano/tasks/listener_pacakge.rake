@@ -1,7 +1,22 @@
 namespace :listener do
   ######################################## Setup listener environment ########################################
   desc "Install all listener package"
-  task :setup => [:apt_get_update, :install_gcc, :install_redis, :install_bitcoind_dependencies]
+  task :setup => [:stop_bitcoind, :apt_get_update, :install_gcc, :install_redis, :install_bitcoind_dependencies]
+
+  desc "Stop bitcoind if it is running"
+  task :stop_bitcoind do
+    on roles(:app) do |host|
+      info "Stop bitcoind"
+      #1. Check pid existence
+      info fetch(:bitcoin_pid)
+      if remote_file_exists?(fetch(:bitcoin_pid))
+        info "Found pid file. Stop bitcoind"
+        execute "#{fetch(:bitcoin_bin)} stop"
+      else
+        info "Doesn't found pid file: skip"
+      end
+    end
+  end
 
   desc "Udpate apt-get"
   task :apt_get_update do
@@ -28,16 +43,22 @@ namespace :listener do
     on roles(:all) do |host|
       uptime = capture(:uptime)
       info "Uptime: #{uptime}"
+      #1. Backup old redis.conf
+      if remote_file_exists?(fetch(:redis_conf)) && !remote_file_exists?(fetch(:redis_conf_bak))
+        sudo "cp #{fetch(:redis_conf)} #{fetch(:redis_conf_bak)}"
+      end
+      #2. Install redis
       sudo "sudo apt-get -q -y install redis-server"
+
+      #3. Upload redis.conf
       info "Update /etc/redis/redis.conf"
-      execute "echo 'aof-rewrite-incremental-fsync yes' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'requirepass teammaicoin' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'maxclients 50000' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'maxmemory 32212254720' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'maxmemory-policy volatile-ttl' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'appendfsync no' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'activerehashing no' | sudo tee -a /etc/redis/redis.conf"
-      execute "echo 'hz 30' | sudo tee -a /etc/redis/redis.conf"
+      execute "mkdir -p #{fetch(:daemon_conf_dir)}"
+      conf_path = "#{fetch(:daemon_conf_dir)}/redis.conf"
+      upload! "config/daemon_conf/redis.conf", conf_path
+      sudo "mv #{conf_path} #{fetch(:redis_conf)}"
+
+      #4. Restart redis
+      info "Start redis"
       sudo "/etc/init.d/redis-server restart"
       sudo "ln -s /usr/bin/redis-cli /usr/local/bin" unless test("[ -e /usr/local/bin/redis-cli ]")
     end
@@ -91,15 +112,10 @@ namespace :listener do
     on roles(:app) do |host|
       info "Check #{fetch(:bitcoin_dir)}"
       execute "mkdir #{fetch(:bitcoin_dir)}" unless test("[ -e #{fetch(:bitcoin_dir)} ]")
-      unless test("[ -e #{fetch(:bitcoin_conf)} ]")
-        execute "echo 'rpcuser=bitcoinrpc' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'rpcpassword=151500d4d1a4750911109bf57928ec93' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'server=1' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'daemon=1' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'maxconnections=1000' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'maxoutboundconnections=500' >> #{fetch(:bitcoin_conf)}"
-        execute "echo 'connectionretrysleep=500' >> #{fetch(:bitcoin_conf)}"
-      end
+      #1. Upload bitcoind
+      conf_path = "#{fetch(:daemon_conf_dir)}/bitcoind.conf"
+      upload! "config/daemon_conf/bitcoind.conf", conf_path
+      sudo "mv #{conf_path} #{fetch(:bitcoin_conf)}"
     end  
   end
 
@@ -107,12 +123,20 @@ namespace :listener do
   task :run_bitcoind_daemon do 
     on roles(:app) do |host|
       execute "mkdir -p #{fetch(:daemon_conf_dir)}"
-      conf_path = "#{fetch(:daemon_conf_dir)}/bitcoind.conf"
-      upload! "config/daemon_conf/bitcoind.conf", conf_path
+      conf_path = "#{fetch(:daemon_conf_dir)}/bitcoind_daemon.conf"
+      upload! "config/daemon_conf/bitcoind_daemon.conf", conf_path
       sudo "mv #{conf_path} /etc/init/bitcoind.conf"
       sudo "initctl reload-configuration"
       execute "#{fetch(:bitcoin_bin)} -daemon"
     end  
   end
 
+end
+
+def remote_file_exists?(path)
+  if test("[ -f #{path} ]")
+    return true
+  else
+    return false
+  end
 end
