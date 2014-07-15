@@ -21,7 +21,8 @@ from common import set_session
 from models import Transaction
 import json
 from constants import ATTRIBUTE_BLOCK_HEIGHT, ATTRIBUTE_TXID,\
-    ATTRIBUTE_BLOCKHASH, ATTRIBUTE_HEIGHT, DEFAULT_BITCOND_RPC_URL
+    ATTRIBUTE_BLOCKHASH, ATTRIBUTE_HEIGHT, DEFAULT_BITCOIND_RPC_URL,\
+    ATTRIBUTE_BLOCK_HASH
 import httplib2
 import threadpool
 from bitcoinrpc.proxy import AuthServiceProxy
@@ -42,33 +43,35 @@ class TransactionPostProcess():
         result = tx_dict.get(ATTRIBUTE_BLOCK_HEIGHT)
         return result
     
-    def __get_block_height_via_rpc__(self, txid):
-        result = None
+    def __get_block_height_and_hash_via_rpc__(self, txid):
+        result = (None,None)
         rpc_tx = blockhash = block = height = None
         try:
-            access = AuthServiceProxy(DEFAULT_BITCOND_RPC_URL)
+            access = AuthServiceProxy(DEFAULT_BITCOIND_RPC_URL)
             rpc_tx = access.getrawtransaction(txid, 1)
             blockhash = rpc_tx.get(ATTRIBUTE_BLOCKHASH)
             block = access.getblock(blockhash)
             height = block.get(ATTRIBUTE_HEIGHT)
-            result =  height
+            result =  (height, blockhash)
         except Exception, e:
-            print "Exception on __get_block_height_via_rpc__:", txid, e, rpc_tx, blockhash, block, height
+            print "Exception on __get_block_height_and_hash_via_rpc__:", txid, e, rpc_tx, blockhash, block, height
         return result
     
-    def __get_block_height__(self, txid=None):
-        result = None
+    def __get_block_height_and_hash__(self, txid=None):
+        result = (None,None)
         try:
             if txid:
                 #result = self.__get_block_height_via_blockchain_info__(txid=txid)
-                result = self.__get_block_height_via_rpc__(txid=txid)
-                print "block_height:", result
+                result = self.__get_block_height_and_hash_via_rpc__(txid=txid)
+                print "block_height/hash:", result
         except Exception, e:
-            print "Exception on __get_block_height__:", txid, e
+            print "Exception on __get_block_height_and_hash__:", txid, e
         return result    
     
     def __update_transaction__(self, transaction):
-        transaction[ATTRIBUTE_BLOCK_HEIGHT] = self.__get_block_height__(transaction.get(ATTRIBUTE_TXID))
+        (height, blockhash)= self.__get_block_height_and_hash__(transaction.get(ATTRIBUTE_TXID))
+        transaction[ATTRIBUTE_BLOCK_HEIGHT] = height
+        transaction[ATTRIBUTE_BLOCK_HASH] = blockhash 
         self.txs.append(transaction)    
         
     def __merge_transactions__(self, transactions):
@@ -76,7 +79,8 @@ class TransactionPostProcess():
             for tx in transactions:
                 if tx.get(ATTRIBUTE_BLOCK_HEIGHT):
                     self.update_session.query(Transaction).filter(Transaction.txid == tx.get(ATTRIBUTE_TXID)).\
-                        update({ATTRIBUTE_BLOCK_HEIGHT:tx.get(ATTRIBUTE_BLOCK_HEIGHT)})
+                        update({ATTRIBUTE_BLOCK_HEIGHT:tx.get(ATTRIBUTE_BLOCK_HEIGHT),
+                                ATTRIBUTE_BLOCK_HASH:tx.get(ATTRIBUTE_BLOCK_HASH)})
             self.update_session.commit()
         except Exception,e:
             print "Exception on __merge_transactions__:", e   
@@ -84,7 +88,7 @@ class TransactionPostProcess():
     def run_post_process(self):
         print "run post process"
         #1. Get all transactions
-        txs = self.query_session.query(Transaction).filter(Transaction.block_height == None).all()
+        txs = self.query_session.query(Transaction).filter(Transaction.block_hash == None).all()
         for tx in txs:
             while self.pool._requests_queue.qsize() > len(self.pool.workers) :
                 self.pool.wait()

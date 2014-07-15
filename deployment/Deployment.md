@@ -3,8 +3,11 @@
 1. `remote@machine $ sudo adduser mcdeploy ` 
 1. `sudo vim /etc/sudoers` 
 1. Add this: `mcdeploy    ALL=(ALL) NOPASSWD: ALL` 
-1. `su mcdeploy; cd; mkdir .ssh`
+1. `su mcdeploy`
+1. `cd; mkdir .ssh`
 1. `vi .ssh/authorized_keys` and add your public key
+1. `sudo apt-get update`
+1. `sudo apt-get install git`
 
 
 # Install listener (bitcoind)

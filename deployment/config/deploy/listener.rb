@@ -1,7 +1,7 @@
-role :app, %w{mcdeploy@54.179.69.232}
-role :web, %w{mcdeploy@54.179.69.232}
-role :db,  %w{mcdeploy@54.179.69.232}
-server '54.179.69.232', user: 'mcdeploy', roles: %w{web app}, my_property: :my_value
+role :app, %w{mcdeploy@54.254.16.90}
+role :web, %w{mcdeploy@54.254.16.90}
+role :db,  %w{mcdeploy@54.254.16.90}
+server "54.254.16.90", user: 'mcdeploy', roles: %w{web app}, my_property: :my_value
 set :application, 'listener'
 set :repo_url, 'git@github.com:huuep/listener2.git'
 set :branch, 'listener-master'
@@ -14,7 +14,7 @@ set :bitcoin_pid,   -> { "#{fetch(:bitcoin_dir)}/bitcoind.pid" }
 set :bitcoin_conf,  -> { "#{fetch(:bitcoin_dir)}/bitcoin.conf" }
 
 namespace :deploy do
-  after :started, :setup_listener do
+  after :starting, :setup_listener do
     on roles(:web) do
       invoke "listener:setup"
     end
