@@ -44,7 +44,7 @@ namespace :listener_pusher do
       upload! "config/daemon_conf/node_pusher.conf", conf_path
       sudo "mv #{conf_path} /etc/init/node_pusher.conf"
       sudo "initctl reload-configuration"
-      execute "cd #{fetch(:deploy_to)}/current && python node_pusher_daemon_runner.py restart test"
+      execute "cd #{fetch(:deploy_to)}/current && python node_pusher_daemon_runner.py restart prod"
     end
   end
 
@@ -55,7 +55,7 @@ namespace :listener_pusher do
       upload! "config/daemon_conf/transaction_pusher.conf", conf_path
       sudo "mv #{conf_path} /etc/init/transaction_pusher.conf"
       sudo "initctl reload-configuration"
-      execute "cd #{fetch(:deploy_to)}/current && python transaction_pusher_daemon_runner.py restart test"
+      execute "cd #{fetch(:deploy_to)}/current && python transaction_pusher_daemon_runner.py restart prod"
     end
   end
 
@@ -66,14 +66,14 @@ namespace :listener_pusher do
       upload! "config/daemon_conf/node_pinger.conf", conf_path
       sudo "mv #{conf_path} /etc/init/node_pinger.conf"
       sudo "initctl reload-configuration"
-      execute "cd #{fetch(:deploy_to)}/current && python node_pinger_daemon_runner.py restart test"
+      execute "cd #{fetch(:deploy_to)}/current && python node_pinger_daemon_runner.py restart prod"
     end
   end
 
   desc "Add transaction post process cron job. Note: this will overwrite all other cron jobs!!"
   task :add_tx_post_cron_job do
     on roles(:all) do |host|
-      cron_job = "*/10 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_post_process.py test >> #{fetch(:deploy_to)}/current/tx_post_process.log"
+      cron_job = "*/10 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_post_process.py prod >> #{fetch(:deploy_to)}/current/tx_post_process.log"
       config = ""
       begin
         config = capture(%Q{crontab -l 2>&1}).split "\n"
@@ -90,7 +90,7 @@ namespace :listener_pusher do
   desc "Add transaction vin vout pusher cron job. Note: this will overwrite all other cron jobs!!"
   task :add_tx_vin_vout_pusher_cron_job do
     on roles(:all) do |host|
-      cron_job = "*/15 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_vin_vout_pusher.py test >> #{fetch(:deploy_to)}/current/tx_vin_vout_pusher.log"
+      cron_job = "*/15 * * * * cd #{fetch(:deploy_to)}/current/ && tx/transaction_vin_vout_pusher.py prod >> #{fetch(:deploy_to)}/current/tx_vin_vout_pusher.log"
       config = ""
       begin
         config = capture(%Q{crontab -l 2>&1}).split "\n"
