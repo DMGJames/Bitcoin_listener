@@ -154,6 +154,11 @@ rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".
 rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher ubuntu@nva_l1:/home/ubuntu/
 ```
 
+```
+rsync -Paz --rsync-path "rsync" --exclude "*.pyc" --exclude "*.log" --exclude ".DS_Store" listener_pusher mcdeploy@listener-master:/home/mcdeploy/dev
+```
+
+
 
 ### Node Pusher Daemon
 
@@ -345,11 +350,14 @@ crontab -e
 
 ### Cron job summary
 ```
-0 18 * * 1 cd /home/ubuntu/listener_pusher/geoip/ && ./update.sh
-*/10 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_post_process.py  test >> /home/ubuntu/listener_pusher/tx_post_process.log
-crontab -e
+0 18 * * 1 cd /home/mcdeploy/listener_pusher/current/geoip/ && ./update.sh
+*/10 * * * * cd /home/mcdeploy/listener_pusher/current && tx/transaction_post_process.py  prod >> /home/mcdeploy/listener_pusher/current/tx_post_process.log
+*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/add_incremental_blocks.py  prod >> /home/mcdeploy/listener_pusher/current/add_incremental_blocks.log
+```
+
+### Cron jobs not running for now
+```
 */15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py  test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log
-crontab -e
 */15 * * * * cd /home/ubuntu/listener_pusher/ && tx/transaction_vin_vout_pusher.py test >> /home/ubuntu/listener_pusher/tx_vin_vout_pusher.log 
 ```
 ### Patch
@@ -391,3 +399,11 @@ Remote:
 	`mysql --user=maimai --host=bitcoin-data-test.clpzt5jt4i1e.ap-southeast-1.rds.amazonaws.com --password listener < /home/ubuntu/data/TxOut.sql`
 	
 	
+
+### Add incremnetal blocks
+Local:
+`block/add_incremental_blocks.py local`
+
+Prod:
+`block/add_incremental_blocks.py prod`
+

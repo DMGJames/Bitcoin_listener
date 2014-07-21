@@ -117,3 +117,34 @@ class Block(Base):
     block_height    = Column(Integer, index=True)
     is_orphaned     = Column(Boolean, index=True)
     created_at      = Column(DateTime)
+    
+##### Those are manually added
+class BtcBlock(Base):
+    __tablename__   = "blocks"
+    id              = Column(BigInteger, primary_key=True)
+    hash            = Column(String(64))
+    time            = Column(BigInteger)
+    
+class BtcTransaction(Base):
+    __tablename__   = "transactions"
+    id              = Column(BigInteger, primary_key=True)
+    hash            = Column(String(64))
+    blockID         = Column(BigInteger)
+
+class BtcInput(Base):
+    __tablename__   = "inputs"
+    id              = Column(BigInteger, primary_key=True)
+    txHash          = Column(String(64))
+    outputHash      = Column(String(64))
+    outputN         = Column(Integer)
+    offset          = Column(Integer)
+    
+class BtcOutput(Base):
+    __tablename__   = "outputs"
+    id              = Column(BigInteger, primary_key=True)
+    dstAddress      = Column(String(36))
+    value           = Column(BigInteger)
+    txHash          = Column(String(64))
+    offset          = Column(Integer)
+    
+Index('txHash_2', BtcOutput.txHash, BtcOutput.offset)
