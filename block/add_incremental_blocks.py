@@ -219,7 +219,7 @@ class AddIncrementalBlocks:
                     stdout.write(".")
                     stdout.flush()
 #                     print item.__dict__
-                    self.update_session.merge(item)
+                    self.update_session.add(item)
                 print "" 
                 new_items = []
                 self.__check_term_signal__()
