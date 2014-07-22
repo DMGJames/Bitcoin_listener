@@ -16,8 +16,6 @@ def set_env():
     print sys.path
 set_env()
 ########################################################################
-from bitcoinrpc.proxy import AuthServiceProxy
-from bitcoinrpc import proxy
 from constants import ATTRIBUTE_BLOCK,\
     ATTRIBUTE_HASH, ATTRIBUTE_TXS, ATTRIBUTE_TXID, ATTRIBUTE_VOUT, ATTRIBUTE_N,\
     ATTRIBUTE_SCRIPT_PUB_KEY, ATTRIBUTE_ADDRESSES, ATTRIBUTE_VALUE,\
@@ -25,23 +23,13 @@ from constants import ATTRIBUTE_BLOCK,\
     DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME,\
     DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_ADDRESS_POOL_SIZE, ATTRIBUTE_HEIGHT,\
     DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_COINBASE
+from block.block_loader import BlockLoader
 from models import TransactionInput, TransactionOutput
 from common import set_session
 from sqlalchemy.sql.functions import func
 from pusher import Pusher
 import threading
 
-
-class BlockLoader():
-    def __init__(self, rpc_url):
-        proxy.HTTP_TIMEOUT = 300
-        self.rpc_access = AuthServiceProxy(rpc_url)
-    
-    def get_block(self, block_height):
-        return self.rpc_access.getblockdetail(block_height)
-    
-    def get_block_aount(self):
-        return self.rpc_access.getblockcount()
         
 class TransactionVinVoutPusher(Pusher):        
     def __init__(self, update_session, query_session,rpc_url,
@@ -73,7 +61,7 @@ class TransactionVinVoutPusher(Pusher):
         print "start:", self.start_height
         
         if not self.end_height:
-            self.end_height = self.block_loader.get_block_aount()
+            self.end_height = self.block_loader.get_block_count()
         print "end:", self.end_height
 
     def listen(self):

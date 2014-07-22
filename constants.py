@@ -62,6 +62,9 @@ ATTRIBUTE_N                         = "n"
 ATTRIBUTE_ADDRESSES                 = "addresses"
 ATTRIBUTE_HEIGHT                    = "height"
 ATTRIBUTE_COINBASE                  = "coinbase"
+ATTRIBUTE_ADDED                     = "added"
+ATTRIBUTE_REMOVED                   = "removed"
+
 
 FILENAME_STATE_CFG          = 'state.cfg'
 FILENAME_GEO_CITY           = "geoip/GeoLiteCity.dat"
@@ -112,6 +115,6 @@ DEFAULT_NODE_CHANNEL            = "node_discovered"
 DEFAULT_TX_QUEUE                = "discovered_txs"
 DEFAULT_TX_CHANNEL              = "tx_discovered"
 DEFAULT_BITCOIND_RPC_URL        = "http://bitcoinrpc:teammaicoin@172.31.28.93:8332"
-DEFAULT_LOCAL_BITCONID_RPC_URL  = "http://mairpcuser:gNmj7abn8hrVwo@127.0.0.1:8332"
+DEFAULT_LOCAL_BITCONID_RPC_URL  = "http://bitcoinrpc:teammaicoin@127.0.0.1:8332"
 
 DEFAULT_TX_ADDRESS_POOL_SIZE    = 1#200
