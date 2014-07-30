@@ -52,6 +52,8 @@ hz 30
 ### `Auto generate miration script (shound be run on your own dev machine)
 `alembic -c ./alembic_local.ini revision  --autogenerate -m "[MESSAGE]"`
 
+### Initialize database
+sh init.sql
 
 ### Migration
 #### Local

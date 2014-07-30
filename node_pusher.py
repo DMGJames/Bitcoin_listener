@@ -175,5 +175,4 @@ if __name__ == '__main__':
     sys.stdout.flush()
     session = set_session(env_setting=env_setting)
     pusher = NodePusher(session=session, batch_size=5, pool_size=200, sleep_time=10)
-    #pusher.set_pool_size(1)
     pusher.start()

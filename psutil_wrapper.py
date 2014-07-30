@@ -39,11 +39,16 @@ class PsutilWrapper:
         self.last_rss = rss
         self.last_vms = vms
         
-        rss = self.__get_memory_str__(rss, readable, False)
-        vms = self.__get_memory_str__(vms, readable, False)
-        rss_diff = self.__get_memory_str__(rss_diff, readable, True)
-        vms_diff = self.__get_memory_str__(vms_diff, readable, True)
-        print "memory_now@{}: rss: {} ({}), vms: {} ({})".format(tag, rss, rss_diff, vms, vms_diff)
+        rss_str = self.__get_memory_str__(rss, readable, False)
+        vms_str = self.__get_memory_str__(vms, readable, False)
+        rss_diff_str = self.__get_memory_str__(rss_diff, readable, True)
+        vms_diff_str = self.__get_memory_str__(vms_diff, readable, True)
+        if rss_diff > 5 * BYTES_PER_MB:
+            rss_diff_str += "**"
+        if vms_diff > 10 * BYTES_PER_MB:
+            vms_diff_str += "$$"
+        print "memory_now@{}: rss: {} ({}), vms: {} ({})".format(tag, rss_str, rss_diff_str, vms_str, vms_diff_str)
+        sys.stdout.flush()
 
     def memory_start(self):
         self.start_rss, self.start_vms = self.process.memory_info()
@@ -57,6 +62,7 @@ class PsutilWrapper:
         rss = self.__get_memory_str__(rss, readable, False)
         vms = self.__get_memory_str__(vms, readable, False)
         print "memory_between@{}: rss: {}, vms: {}".format(tag, rss, vms)
+        sys.stdout.flush()
     
     def __get_memory_diff__(self, start, end):
         return end - start
