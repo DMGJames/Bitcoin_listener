@@ -8,6 +8,7 @@ bunch==1.0.1
 gevent==1.0.1
 greenlet==0.4.2
 httplib2==0.9
+psutil==2.1.1
 pygeoip==0.3.1
 python-jsonrpc==0.4.0
 redis==2.10.1
