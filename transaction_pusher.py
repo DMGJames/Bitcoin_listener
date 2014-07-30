@@ -106,6 +106,6 @@ if __name__ == '__main__':
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
     session = set_session(env_setting=env_setting)
-    pusher = TransactionPusher(session=session)
+    pusher = TransactionPusher(session=session, batch_size=5, pool_size=200, sleep_time=10)
     pusher.start()
     

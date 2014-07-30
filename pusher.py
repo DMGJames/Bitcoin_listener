@@ -67,16 +67,18 @@ class Pusher(object):
         return self.batch_size
 
     def get_sleep_time(self):
-        return sleep_time
+        return self.sleep_time
 
     def get_pool_size(self):
         return len(self.pool.workers)
 
+    '''
     def start(self):
         self.load_and_push()
         #self.listen()
         #self.pool.wait()
-    
+    '''
+
     ''' Not used now because it seems listen() could cause significant memory leaks
     def listen(self):
         print "Start listening..."
@@ -93,7 +95,7 @@ class Pusher(object):
         return self.redis_connection.llen(self.queue)
 
     def __load_and_push__(self):
-        ps.memory_now(tag="__load_and_push__@entry")
+        #ps.memory_now(tag="__load_and_push__@entry")
         print "Start __load_and_push__..."
         sys.stdout.flush()
         
@@ -115,20 +117,20 @@ class Pusher(object):
         '''
 
     def __load_and_push_a_batch__(self):
-        ps.memory_now(tag="__load_and_push_a_batch__@entry")
+        #ps.memory_now(tag="__load_and_push_a_batch__@entry")
         print "Start __load_and_push_a_batch__...({} data left)".format(self.__num_data_left__()) 
         sys.stdout.flush()
         data = self.load_data()
-        ps.memory_now(tag="__load_and_push_a_batch__@load_data")
+        #ps.memory_now(tag="__load_and_push_a_batch__@load_data")
         data = self.process_data(data)
-        ps.memory_now(tag="__load_and_push_a_batch__@process_data")
+        #ps.memory_now(tag="__load_and_push_a_batch__@process_data")
         self.push_data_to_db(data)
-        ps.memory_now(tag="__load_and_push_a_batch__@push_data_to_db")
-        ps.memory_now(tag="__load_and_push_a_batch__@exit")
+        #ps.memory_now(tag="__load_and_push_a_batch__@push_data_to_db")
+        #ps.memory_now(tag="__load_and_push_a_batch__@exit")
 
     def __first_try__(self, dummy):
         self.__load_and_push__()
-        self.listen()
+        #self.listen()
 
     def start(self):
         self.__print_start_message__()
