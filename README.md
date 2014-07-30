@@ -15,6 +15,15 @@ sudo pip install -r requirement.txt
 sh geoip/update.sh
 ```
 
+### Python Requirements
+pygeoip==0.3.1
+gevent==1.0.1
+sqlalchemy==0.9.6
+redis==2.10.1
+threadpool==1.2.7
+MySQL-python==1.2.5
+psutil==2.1.1
+
 Install redis:
 
 ```
@@ -25,7 +34,7 @@ sudo make install
 Update conf:
 
 ```
-sudo vi /etc/redis/6379.conf
+sudo vi /etc/redis/redis.conf
 #### Append the following
 aof-rewrite-incremental-fsync yes
 requirepass teammaicoin
@@ -38,11 +47,13 @@ hz 30
 ```
 
 ### Update Geo database
-`sh bitnodes/geoip/update.sh`
+`sh geoip/update.sh`
 
-### Auto generate miration script (shound be run on your own dev machine)
+### `Auto generate miration script (shound be run on your own dev machine)
 `alembic -c ./alembic_local.ini revision  --autogenerate -m "[MESSAGE]"`
 
+### Initialize database
+sh init.sql
 
 ### Migration
 #### Local

@@ -21,6 +21,8 @@ from models import Node
 from pusher import Pusher
 from common import set_session
 import sys
+from psutil_wrapper import PsutilWrapper
+import gc
 
 def set_env():
     # 1. Append current file directory as path
@@ -44,7 +46,13 @@ class NodePusher(Pusher):
             password = password,
             pool_size = pool_size)
 
+    def start(self):
+        print "Node pusher started"
+        sys.stdout.flush()
+        super(NodePusher, self).start()
+
     def process_data(self, data):
+        ps = PsutilWrapper(os.getpid())
         node_ips = data
         current_timestamp = int(math.floor(time.time()))
         timed_node_ips = [{ATTRIBUTE_NODE:node_ip, ATTRIBUTE_TIMESTAMP:current_timestamp} for node_ip in node_ips]
@@ -52,11 +60,13 @@ class NodePusher(Pusher):
         # 1. Get last timestamp from DB
         last_node_timestamp = self.__get_last_node_timestamp__()
         print "Upload nodes modified after:", last_node_timestamp
-        
+        sys.stdout.flush()
+
         # 2. filter old nodes
         timed_node_ips = [timed_node_ip for timed_node_ip in timed_node_ips if timed_node_ip[ATTRIBUTE_TIMESTAMP] > last_node_timestamp]
         print "To upload nodes: "
         print json.dumps(timed_node_ips, indent=4)
+        sys.stdout.flush()
         
         # 3. Download node data
         workers = [gevent.spawn(self.__set_node_data__, timed_node_ip) for timed_node_ip in timed_node_ips]
@@ -77,6 +87,10 @@ class NodePusher(Pusher):
         if add_count > 0 : 
             self.__update_last_node_timestamp__(new_last_node_timestamp)
             print "Update last node timestamp to:", new_last_node_timestamp
+            sys.stdout.flush()
+
+        #print "# of unreachable objects:", gc.collect()
+        #print gc.garbage
 
         return nodes
 
@@ -139,6 +153,7 @@ class NodePusher(Pusher):
     def __set_node_data__(self, node):
         ip_address, port = self.__split_address_and_port__(node[ATTRIBUTE_NODE])
         print "set node data: ", ip_address, port
+        sys.stdout.flush()
         node_data = node_resolver.get_node_info(address=ip_address, port=port)
         node[ATTRIBUTE_NODE_DATA] = node_data
         node[ATTRIBUTE_IP_ADDRESS] = ip_address
@@ -147,14 +162,17 @@ class NodePusher(Pusher):
 
     def __print_loading_message__(self, loaded):
         print "Done loading nodes"
+        sys.stdout.flush()
 
     def __print_pushing_message__(self,  pushed):
         print "Done pushing nodes"
+        sys.stdout.flush()
 
 if __name__ == '__main__':
     set_env()
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
+    sys.stdout.flush()
     session = set_session(env_setting=env_setting)
-    pusher = NodePusher(session=session)
+    pusher = NodePusher(session=session, batch_size=5, pool_size=200, sleep_time=10)
     pusher.start()
