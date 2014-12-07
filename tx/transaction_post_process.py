@@ -27,6 +27,19 @@ import httplib2
 import threadpool
 from bitcoinrpc.proxy import AuthServiceProxy
 
+LOCK_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "transaction_post_process.lock") 
+def is_process_running():
+    print "Check lock file", LOCK_FILE
+    return os.path.exists(LOCK_FILE)
+
+def make_lock_file():
+    with open(LOCK_FILE, 'a'):
+        os.utime(LOCK_FILE, None)
+   
+def remove_lock_file():
+    os.remove(LOCK_FILE)
+
+
 class TransactionPostProcess():
     def __init__(self, query_session, update_session):
         self.query_session = query_session
@@ -103,8 +116,13 @@ class TransactionPostProcess():
 if __name__ == '__main__':
     env_setting = sys.argv[1]
     print "Environment:" , env_setting
-    query_session = set_session(env_setting=env_setting)
-    update_session = set_session(env_setting=env_setting)
-    post_process = TransactionPostProcess(query_session=query_session, update_session = update_session)
-    post_process.run_post_process()
+    if is_process_running():
+        print "Process is already running, skip this round"
+    else:        
+        make_lock_file()
+        query_session = set_session(env_setting=env_setting)
+        update_session = set_session(env_setting=env_setting)
+        post_process = TransactionPostProcess(query_session=query_session, update_session = update_session)
+        post_process.run_post_process()
+        remove_lock_file()
     print "Done!"
