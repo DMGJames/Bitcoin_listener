@@ -1,4 +1,4 @@
-set :server, 'listener-satellite-sg-01'
+set :server, '54.179.183.108'
 
 set :user, 'mcdeploy'
 role :app, [fetch(:user) + "@" + fetch(:server)]

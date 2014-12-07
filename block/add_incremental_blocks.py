@@ -8,12 +8,14 @@ Created on Jul 21, 2014
 import os
 from os.path import sys
 from sys import stdout
+import time
+import inspect
 def set_env():
     # 1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))
     #sys.path.append(file_dir)
     sys.path.append(file_dir+"/../")
-    print sys.path
+#     print sys.path
 
 set_env()
 ############################
@@ -26,6 +28,22 @@ from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
     ATTRIBUTE_VIN, ATTRIBUTE_VOUT, ATTRIBUTE_COINBASE, ATTRIBUTE_TXID,\
     ATTRIBUTE_SCRIPT_PUB_KEY, ATTRIBUTE_ADDRESSES, ATTRIBUTE_VALUE
 from models import BtcBlock, BtcTransaction, BtcInput, BtcOutput
+
+
+def is_process_running():
+    pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
+    current_filename = inspect.getfile(inspect.currentframe())
+    current_pid = str(os.getpid())
+    for pid in pids:
+        if pid == current_pid:
+            continue
+        try:
+            process_filename = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read()
+            if current_filename in process_filename:
+                return True
+        except IOError: # proc has already terminated
+            continue
+    return False
 
 class AddIncrementalBlocks:
     def __init__(self, query_session, update_session, rpc_url):
@@ -157,6 +175,8 @@ class AddIncrementalBlocks:
             new_items = []
             #1. Add block
             new_block = BtcBlock(id = block.get(ATTRIBUTE_HEIGHT), hash=block.get(ATTRIBUTE_HASH), time=block.get(ATTRIBUTE_TIMESTAMP))
+            print "Add block: ", block.get(ATTRIBUTE_HEIGHT), "----------------------------------------------------------------------------"
+            print block.get(ATTRIBUTE_HEIGHT), block.get(ATTRIBUTE_HASH), block.get(ATTRIBUTE_TIMESTAMP)
             new_items.append(new_block)
             print new_block.__dict__
             
@@ -220,6 +240,7 @@ class AddIncrementalBlocks:
                     stdout.flush()
 #                     print item.__dict__
                     self.update_session.add(item)
+#                     print item.__class__.__name__, ":", item.id
                 print "" 
                 new_items = []
                 self.__check_term_signal__()
@@ -232,14 +253,20 @@ class AddIncrementalBlocks:
                 self.update_session.rollback()
                 return 
             finally:
-                self.update_session.close()    
+                self.update_session.close()
+            print "Finish adding block: ", block.get(ATTRIBUTE_HEIGHT), "----------------------------------------------------------------------------"
         
 env_setting = 'local'
 if __name__ == '__main__':
     env_setting = sys.argv[1]
+    print "Start: ---------------------------------------------------------------------------------"
     print "Environment:" , env_setting
-    query_session = set_session(env_setting=env_setting)
-    update_session = set_session(env_setting=env_setting)
-    adder = AddIncrementalBlocks(query_session=query_session, update_session = update_session, rpc_url = DEFAULT_LOCAL_BITCONID_RPC_URL)
-    adder.add_incremental_blocks()
+    if is_process_running():
+        print "Process is already running, skip this round"
+    else:        
+        query_session = set_session(env_setting=env_setting)
+        update_session = set_session(env_setting=env_setting)
+        adder = AddIncrementalBlocks(query_session=query_session, update_session = update_session, rpc_url = DEFAULT_LOCAL_BITCONID_RPC_URL)
+        adder.add_incremental_blocks()
     print "Done!"
+    print "End: -----------------------------------------------------------------------------------"
