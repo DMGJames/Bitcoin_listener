@@ -30,20 +30,17 @@ from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
 from models import BtcBlock, BtcTransaction, BtcInput, BtcOutput
 
 
+LOCK_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "add_incremental_blocks.lock") 
 def is_process_running():
-    pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
-    current_filename = inspect.getfile(inspect.currentframe())
-    current_pid = str(os.getpid())
-    for pid in pids:
-        if pid == current_pid:
-            continue
-        try:
-            process_filename = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read()
-            if current_filename in process_filename:
-                return True
-        except IOError: # proc has already terminated
-            continue
-    return False
+    print "Check lock file", LOCK_FILE
+    return os.path.exists(LOCK_FILE)
+
+def make_lock_file():
+    with open(LOCK_FILE, 'a'):
+        os.utime(LOCK_FILE, None)
+   
+def remove_lock_file():
+    os.remove(LOCK_FILE)
 
 class AddIncrementalBlocks:
     def __init__(self, query_session, update_session, rpc_url):
@@ -264,9 +261,11 @@ if __name__ == '__main__':
     if is_process_running():
         print "Process is already running, skip this round"
     else:        
+        make_lock_file()
         query_session = set_session(env_setting=env_setting)
         update_session = set_session(env_setting=env_setting)
         adder = AddIncrementalBlocks(query_session=query_session, update_session = update_session, rpc_url = DEFAULT_LOCAL_BITCONID_RPC_URL)
         adder.add_incremental_blocks()
+        remove_lock_file()
     print "Done!"
     print "End: -----------------------------------------------------------------------------------"
