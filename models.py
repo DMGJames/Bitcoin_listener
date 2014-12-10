@@ -149,6 +149,7 @@ class BtcInput(Base):
     txHash          = Column(String(64))
     outputHash      = Column(String(64))
     outputN         = Column(Integer)
+    script_sig      = Column(String(500))
     offset          = Column(Integer)
 
 class BtcOutput(Base):
