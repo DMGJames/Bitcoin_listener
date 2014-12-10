@@ -37,7 +37,7 @@ class Node(Base):
     user_agent      = Column(String(250), index=True)
     org             = Column(String(250), index=True)
     asn             = Column(String(250), index=True)
-    created_at      = Column(DateTime, default=func.now())    
+    created_at      = Column(DateTime, default=func.now())
     updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
     
 class NodeActivity(Base):
@@ -129,14 +129,13 @@ class Block(Base):
     block_height    = Column(Integer, index=True)
     is_orphaned     = Column(Boolean, index=True)
     created_at      = Column(DateTime)
-    
-##### Those are manually added
+
 class BtcBlock(Base):
     __tablename__   = "blocks"
     id              = Column(BigInteger, primary_key=True)
     hash            = Column(String(64))
     time            = Column(BigInteger)
-    
+
 class BtcTransaction(Base):
     __tablename__   = "transactions"
     id              = Column(BigInteger, primary_key=True)
@@ -150,7 +149,7 @@ class BtcInput(Base):
     outputHash      = Column(String(64))
     outputN         = Column(Integer)
     offset          = Column(Integer)
-    
+
 class BtcOutput(Base):
     __tablename__   = "outputs"
     id              = Column(BigInteger, primary_key=True)
@@ -158,5 +157,5 @@ class BtcOutput(Base):
     value           = Column(BigInteger)
     txHash          = Column(String(64))
     offset          = Column(Integer)
-    
+
 Index('txHash_2', BtcOutput.txHash, BtcOutput.offset)
