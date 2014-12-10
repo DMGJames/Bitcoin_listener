@@ -45,8 +45,22 @@ def upgrade():
     op.create_index(op.f('ix_transaction_vin_output_txid'), 'transaction_vin', ['output_txid'], unique=False)
     op.create_index(op.f('ix_transaction_vin_txid'), 'transaction_vin', ['txid'], unique=False)
     op.create_index(op.f('ix_transaction_vin_vout_offset'), 'transaction_vin', ['vout_offset'], unique=False)
+
+    op.drop_index(op.f('ix_transaction_address_vout_index'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_txid'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_address'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_value'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_is_from_coinbase'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_block_height'), table_name='transaction_address')
+    op.drop_index(op.f('ix_transaction_address_block_hash'), table_name='transaction_address')
     op.drop_table('transaction_address')
+
+    op.drop_index(op.f('ix_transaction_spending_input_txid_and_vout_index'), table_name='transaction_spending')
+    op.drop_index(op.f('ix_transaction_spending_vout_index'), table_name='transaction_spending')
+    op.drop_index(op.f('ix_transaction_spending_txid'), table_name='transaction_spending')
+    op.drop_index(op.f('ix_transaction_spending_input_txid'), table_name='transaction_spending')
     op.drop_table('transaction_spending')
+
     op.create_index(op.f('ix_node_address'), 'node', ['address'], unique=False)
     op.create_index(op.f('ix_node_activity_id'), 'node_activity', ['id'], unique=False)
     op.add_column('transaction', sa.Column('block_hash', sa.String(length=250), nullable=True))
@@ -66,6 +80,7 @@ def downgrade():
     op.drop_column('transaction', 'block_hash')
     op.drop_index(op.f('ix_node_activity_id'), table_name='node_activity')
     op.drop_index(op.f('ix_node_address'), table_name='node')
+
     op.create_table('transaction_spending',
     sa.Column('txid', mysql.VARCHAR(collation=u'utf8_unicode_ci', length=250), nullable=False),
     sa.Column('input_txid', mysql.VARCHAR(collation=u'utf8_unicode_ci', length=250), nullable=False),
@@ -75,6 +90,12 @@ def downgrade():
     mysql_default_charset=u'utf8',
     mysql_engine=u'InnoDB'
     )
+
+    op.create_index(op.f('ix_transaction_spending_input_txid'), 'transaction_spending', ['input_txid'], unique=False)
+    op.create_index(op.f('ix_transaction_spending_txid'), 'transaction_spending', ['txid'], unique=False)
+    op.create_index(op.f('ix_transaction_spending_vout_index'), 'transaction_spending', ['vout_index'], unique=False)
+    op.create_index('ix_transaction_spending_input_txid_and_vout_index', 'transaction_spending', ['input_txid', 'vout_index'], unique=False)
+
     op.create_table('transaction_address',
     sa.Column('txid', mysql.VARCHAR(collation=u'utf8_unicode_ci', length=250), nullable=False),
     sa.Column('address', mysql.VARCHAR(collation=u'utf8_unicode_ci', length=250), nullable=False),
@@ -88,6 +109,15 @@ def downgrade():
     mysql_default_charset=u'utf8',
     mysql_engine=u'InnoDB'
     )
+
+    op.create_index(op.f('ix_transaction_address_block_hash'), 'transaction_address', ['block_hash'], unique=False)
+    op.create_index(op.f('ix_transaction_address_block_height'), 'transaction_address', ['block_height'], unique=False)
+    op.create_index(op.f('ix_transaction_address_is_from_coinbase'), 'transaction_address', ['is_from_coinbase'], unique=False)
+    op.create_index(op.f('ix_transaction_address_value'), 'transaction_address', ['value'], unique=False)
+    op.create_index(op.f('ix_transaction_address_address'), 'transaction_address', ['address'], unique=False)
+    op.create_index(op.f('ix_transaction_address_txid'), 'transaction_address', ['txid'], unique=False)
+    op.create_index(op.f('ix_transaction_address_vout_index'), 'transaction_address', ['vout_index'], unique=False)
+
     op.drop_index(op.f('ix_transaction_vin_vout_offset'), table_name='transaction_vin')
     op.drop_index(op.f('ix_transaction_vin_txid'), table_name='transaction_vin')
     op.drop_index(op.f('ix_transaction_vin_output_txid'), table_name='transaction_vin')
