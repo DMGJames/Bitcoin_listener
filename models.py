@@ -125,7 +125,7 @@ class TransactionAddressInfoUpdate(Base):
 
 class Block(Base):
     __tablename__   = "block"
-    block_hash      = Column(String(250), index=True, primary_key = True)
+    block_hash      = Column(String(250), index=True, primary_key=True)
     block_height    = Column(Integer, index=True)
     is_orphaned     = Column(Boolean, index=True)
     created_at      = Column(DateTime)
@@ -141,6 +141,7 @@ class BtcTransaction(Base):
     id              = Column(BigInteger, primary_key=True)
     hash            = Column(String(64))
     blockID         = Column(BigInteger)
+    is_coinbase     = Column(Boolean, index=True)
 
 class BtcInput(Base):
     __tablename__   = "inputs"
