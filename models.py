@@ -6,6 +6,18 @@ from sqlalchemy.sql.schema import Index
 
 
 Base = declarative_base()
+
+class AddressTag(Base):
+    __tablename__   = 'address_tag'
+    id              = Column(Integer, primary_key=True)
+    user_id         = Column(Integer)
+    tag             = Column(String(250))
+    address         = Column(String(250), index=True)
+    source          = Column(String(250), index=True)
+    link            = Column(String(250))
+    verified        = Column(Boolean)
+    created_at      = Column(DateTime, default=func.now())
+    updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
  
 class Node(Base):
     __tablename__   = 'node'
