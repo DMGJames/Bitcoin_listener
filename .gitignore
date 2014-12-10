@@ -25,3 +25,5 @@ log/*
 # PyCharm files
 .idea/
 
+# You can put your personal files in the directory
+/personal/
