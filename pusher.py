@@ -33,7 +33,7 @@ class Pusher(object):
         self.print_lock = threading.Lock()
 
         try:
-            self.redis_connection = redis.StrictRedis(password=password)
+            self.redis_connection = redis.StrictRedis(port=6378, password=password)
             self.redis_connection.ping()
         except:
             self.redis_connection = redis.StrictRedis()
