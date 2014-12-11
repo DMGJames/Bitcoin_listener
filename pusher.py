@@ -135,15 +135,12 @@ class Pusher(object):
     def start(self):
         self.__print_start_message__()
         for i in range(self.get_pool_size()):
-            requests = threadpool.makeRequests(self.__first_try__, [0])
             try:
+                requests = threadpool.makeRequests(self.__first_try__, [0])
                 for req in requests: self.pool.putRequest(req)
             except Exception as e:
                 print >> sys.stderr, "Exception on request:", e
-        while True:
-            print "Pusher is running..."
-            sys.stdout.flush()
-            time.sleep(10)
+            self.pool.wait()
             
         ''' This is the old flow of multi-threading. Only commented out for the future reference.
         while self.__has_pending_data__():
