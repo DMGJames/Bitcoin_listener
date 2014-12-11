@@ -4,6 +4,7 @@ Created on Jun 19, 2014
 @author: yutelin
 '''
 import os
+import sys
 import ConfigParser
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
@@ -25,3 +26,17 @@ def set_session(env_setting='local'):
     session_maker.configure(bind=engine)
     session = session_maker()
     return session
+
+def get_hostname_or_die():
+    try:
+        file_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(file_dir, "HOSTNAME")
+        with open(file_path, "r") as file:
+            return file.readline().strip()
+    except IOError:
+        sys.exit("ERROR: hostname not found")
+    except:
+        unexpected_error()
+
+def unexpected_error():
+    sys.exit("ERROR: %s" % sys.exc_info()[0])

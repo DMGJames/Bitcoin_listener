@@ -16,7 +16,7 @@ import threadpool
 import time
 import MySQLdb
 import traceback
-from common import set_session
+from common import set_session, get_hostname_or_die
 
 def is_node_active(ip_address, port):
     connection = Connection((ip_address, port))
@@ -148,7 +148,9 @@ class NodePinger():
                     last_activity = self.__get_last_node_activity_record__(address=address)
                     if not last_activity or not activity.status == last_activity.get(ATTRIBUTE_STATUS):
                         print "Add: ", activity.ip_address, activity.status
-                        node_activity = NodeActivity(address=address,status=activity.status)
+                        node_activity = NodeActivity(address=address,
+                                                     status=activity.status,
+                                                     pushed_from=get_hostname_or_die())
                         # Add to DB
                         self.session.add(node_activity)
                         self.session.commit()

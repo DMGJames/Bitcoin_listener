@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 from os.path import os, sys
 
-from common import set_session
+from common import set_session, get_hostname_or_die
 from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_CHANNEL, \
     ATTRIBUTE_TYPE, ATTRIBUTE_TXID, ATTRIBUTE_RELAYED_FROM, \
     ATTRIBUTE_RECEIVED_AT, ATTRIBUTE_TIME_RECEIVED, ATTRIBUTE_VALUE, ATTRIBUTE_VOUT, \
@@ -42,19 +42,20 @@ class TransactionPusher(Pusher):
             result = []
             for json_tx in json_txs:
                 dict_tx = self.__json_tx_to_dict_tx__(json_tx)
-                tx = Transaction(txid = dict_tx.get(ATTRIBUTE_TXID),
-                                 value = dict_tx.get(ATTRIBUTE_VALUE),
-                                 has_multisig = dict_tx.get(ATTRIBUTE_HAS_MULTISIG),
-                                 has_nulldata = dict_tx.get(ATTRIBUTE_HAS_NULLDATA),
-                                 has_pubkey = dict_tx.get(ATTRIBUTE_HAS_PUBKEY),
-                                 has_pubkeyhash = dict_tx.get(ATTRIBUTE_HAS_PUBKEYHASH),
-                                 has_scripthash = dict_tx.get(ATTRIBUTE_HAS_SCRIPTHASH)
-                                 )
+                tx = Transaction(txid=dict_tx.get(ATTRIBUTE_TXID),
+                                 value=dict_tx.get(ATTRIBUTE_VALUE),
+                                 has_multisig=dict_tx.get(ATTRIBUTE_HAS_MULTISIG),
+                                 has_nulldata=dict_tx.get(ATTRIBUTE_HAS_NULLDATA),
+                                 has_pubkey=dict_tx.get(ATTRIBUTE_HAS_PUBKEY),
+                                 has_pubkeyhash=dict_tx.get(ATTRIBUTE_HAS_PUBKEYHASH),
+                                 has_scripthash=dict_tx.get(ATTRIBUTE_HAS_SCRIPTHASH),
+                                 pushed_from=get_hostname_or_die())
                 result.append(tx)
-                tx_info = TransactionInfo(txid = dict_tx.get(ATTRIBUTE_TXID),
-                                          relayed_from = dict_tx.get(ATTRIBUTE_RELAYED_FROM),
-                                          received_at = dict_tx.get(ATTRIBUTE_RECEIVED_AT),
-                                          json_string = json_tx)
+                tx_info = TransactionInfo(txid=dict_tx.get(ATTRIBUTE_TXID),
+                                          relayed_from=dict_tx.get(ATTRIBUTE_RELAYED_FROM),
+                                          received_at=dict_tx.get(ATTRIBUTE_RECEIVED_AT),
+                                          json_string=json_tx,
+                                          pushed_from=get_hostname_or_die())
                 result.append(tx_info)
         except Exception, e:
             print "Error on process_data:", e

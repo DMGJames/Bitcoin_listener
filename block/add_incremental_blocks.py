@@ -21,7 +21,7 @@ set_env()
 ############################
 from sqlalchemy.sql.functions import func
 import signal
-from common import set_session
+from common import set_session, get_hostname_or_die
 from block.block_loader import BlockLoader
 from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
     ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIMESTAMP,\
@@ -171,9 +171,10 @@ class AddIncrementalBlocks:
         for block in added_blocks:
             new_items = []
             #1. Add block
-            new_block = BtcBlock(id = block.get(ATTRIBUTE_HEIGHT), hash=block.get(ATTRIBUTE_HASH), time=block.get(ATTRIBUTE_TIMESTAMP))
-            print "Add block: ", block.get(ATTRIBUTE_HEIGHT), "----------------------------------------------------------------------------"
-            print block.get(ATTRIBUTE_HEIGHT), block.get(ATTRIBUTE_HASH), block.get(ATTRIBUTE_TIMESTAMP)
+            new_block = BtcBlock(id=block.get(ATTRIBUTE_HEIGHT),
+                                 hash=block.get(ATTRIBUTE_HASH),
+                                 time=block.get(ATTRIBUTE_TIMESTAMP),
+                                 pushed_from=get_hostname_or_die())
             new_items.append(new_block)
             print new_block.__dict__
             
@@ -183,9 +184,10 @@ class AddIncrementalBlocks:
             #3. Iterate through txs
             for tx in txs:
                 #3.1 Process transaction
-                new_transaction = BtcTransaction(id = tx_id,
-                                                 hash = tx.get(ATTRIBUTE_TXID),
-                                                 blockID = block.get(ATTRIBUTE_HEIGHT))
+                new_transaction = BtcTransaction(id=tx_id,
+                                                 hash=tx.get(ATTRIBUTE_TXID),
+                                                 blockID=block.get(ATTRIBUTE_HEIGHT),
+                                                 pushed_from=get_hostname_or_die())
                 tx_id += 1
 #                 print new_transaction.__dict__
                 new_items.append(new_transaction) 
@@ -194,18 +196,19 @@ class AddIncrementalBlocks:
                 vin = tx.get(ATTRIBUTE_VIN)
                 for offset, vin_data in enumerate(vin):
                     if(vin_data.get(ATTRIBUTE_COINBASE)):
-                        new_input = BtcInput(id = input_id,
-                                             txHash = tx.get(ATTRIBUTE_TXID),
-                                             outputHash = '0000000000000000000000000000000000000000000000000000000000000000',
-                                             outputN    = -1,
-                                             offset     = offset)
-                        
+                        new_input = BtcInput(id=input_id,
+                                             txHash=tx.get(ATTRIBUTE_TXID),
+                                             outputHash='0000000000000000000000000000000000000000000000000000000000000000',
+                                             outputN=-1,
+                                             offset=offset,
+                                             pushed_from=get_hostname_or_die())
                     else:
-                        new_input = BtcInput(id = input_id,
-                                             txHash = tx.get(ATTRIBUTE_TXID),
-                                             outputHash = vin_data.get(ATTRIBUTE_TXID),
-                                             outputN    = vin_data.get(ATTRIBUTE_VOUT),
-                                             offset     = offset)
+                        new_input = BtcInput(id=input_id,
+                                             txHash=tx.get(ATTRIBUTE_TXID),
+                                             outputHash=vin_data.get(ATTRIBUTE_TXID),
+                                             outputN=vin_data.get(ATTRIBUTE_VOUT),
+                                             offset=offset,
+                                             pushed_from=get_hostname_or_die())
                     input_id += 1
 #                         print new_input.__dict__
                     new_items.append(new_input)
@@ -218,11 +221,12 @@ class AddIncrementalBlocks:
                     if vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY) and vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES) and \
                         len(vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)) == 1:
                         address = vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)[0]
-                    new_output = BtcOutput(id = output_id,
-                                           dstAddress = address,
-                                           value = (int)(vout_data.get(ATTRIBUTE_VALUE)*100000000),
-                                           txHash = tx.get(ATTRIBUTE_TXID),
-                                           offset = offset)
+                    new_output = BtcOutput(id=output_id,
+                                           dstAddress=address,
+                                           value=(int)(vout_data.get(ATTRIBUTE_VALUE)*100000000),
+                                           txHash=tx.get(ATTRIBUTE_TXID),
+                                           offset=offset,
+                                           pushed_from=get_hostname_or_die())
                     output_id += 1
 #                     print new_output.__dict__
                     new_items.append(new_output)

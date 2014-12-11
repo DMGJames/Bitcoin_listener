@@ -25,7 +25,7 @@ from constants import ATTRIBUTE_BLOCK,\
     DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_COINBASE
 from block.block_loader import BlockLoader
 from models import TransactionInput, TransactionOutput
-from common import set_session
+from common import set_session, get_hostname_or_die
 from sqlalchemy.sql.functions import func
 from pusher import Pusher
 import threading
@@ -143,12 +143,13 @@ class TransactionVinVoutPusher(Pusher):
                     output_txid = vin.get(ATTRIBUTE_TXID,"coinbase")
                     if vin.get(ATTRIBUTE_COINBASE): is_from_coinbase = True
                     vout_offset = vin.get(ATTRIBUTE_VOUT, -1)
-                    tx_input = TransactionInput(txid = txid, 
-                                                offset = offset,
-                                                block_height = block_height,
-                                                block_hash = block_hash,
-                                                output_txid = output_txid, 
-                                                vout_offset = vout_offset)
+                    tx_input = TransactionInput(txid=txid,
+                                                offset=offset,
+                                                block_height=block_height,
+                                                block_hash=block_hash,
+                                                output_txid=output_txid,
+                                                vout_offset=vout_offset,
+                                                pushed_from=get_hostname_or_die())
                     tx_inputs.append(tx_input)
                  
                 #2. Get transaction outputs
@@ -159,26 +160,27 @@ class TransactionVinVoutPusher(Pusher):
                     address = None
                     if script_pub_key.get(ATTRIBUTE_TYPE) == ATTRIBUTE_NULLDATA:
                         address = ATTRIBUTE_NULLDATA
-                        tx_output = TransactionOutput(txid = txid,
-                                                       offset = offset,
-                                                       address = address,
-                                                       block_hash = block_hash,
-                                                       block_height = block_height,
-                                                       value = value,
-                                                       is_from_coinbase = is_from_coinbase)
+                        tx_output = TransactionOutput(txid=txid,
+                                                      offset=offset,
+                                                      address=address,
+                                                      block_hash=block_hash,
+                                                      block_height=block_height,
+                                                      value=value,
+                                                      is_from_coinbase=is_from_coinbase,
+                                                      pushed_from=get_hostname_or_die())
                         tx_outputs.append(tx_output)
                     else:
                         if vout.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES):
                             addresses = vout.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)
                             for address in addresses:
-                                tx_output = TransactionOutput(txid = txid,
-                                                               offset = offset,
-                                                               address = address,
-                                                               block_hash = block_hash,
-                                                               block_height = block_height,
-                                                               value = value,
-                                                               is_from_coinbase = is_from_coinbase)
-                             
+                                tx_output = TransactionOutput(txid=txid,
+                                                              offset=offset,
+                                                              address=address,
+                                                              block_hash=block_hash,
+                                                              block_height=block_height,
+                                                              value=value,
+                                                              is_from_coinbase=is_from_coinbase,
+                                                              pushed_from=get_hostname_or_die())
                                 tx_outputs.append(tx_output)
         return (tx_inputs, tx_outputs)
     
