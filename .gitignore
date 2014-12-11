@@ -27,3 +27,6 @@ log/*
 
 # You can put your personal files in the directory
 /personal/
+
+# HOSTNAME will be created by deployment
+/HOSTNAME
