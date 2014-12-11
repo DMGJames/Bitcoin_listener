@@ -52,16 +52,6 @@ class Pusher(object):
 
     def set_sleep_time(self, sleep_time):
         self.sleep_time = sleep_time
-    
-    ''' Don't use it. Haven't fully tested.
-    def set_pool_size(self, pool_size):
-        if pool_size < self.pool.workers:
-            self.pool.dismissWorkers(pool_size)
-        elif pool_size > self.pool.workers:
-            self.pool.createWorkers(pool_size)
-        else:
-            pass
-    '''
 
     def get_batch_size(self):
         return self.batch_size
@@ -72,30 +62,10 @@ class Pusher(object):
     def get_pool_size(self):
         return len(self.pool.workers)
 
-    '''
-    def start(self):
-        self.load_and_push()
-        #self.listen()
-        #self.pool.wait()
-    '''
-
-    ''' Not used now because it seems listen() could cause significant memory leaks
-    def listen(self):
-        print "Start listening..."
-        sys.stdout.flush()
-        pubsub = self.redis_connection.pubsub()
-        pubsub.subscribe(self.channel)
-        for msg in pubsub.listen():
-            if msg[ATTRIBUTE_CHANNEL] == self.channel and msg[ATTRIBUTE_TYPE] == ATTRIBUTE_MESSAGE:
-                if self.__has_pending_data__():
-                    self.__load_and_push__()
-    '''
-
     def __num_data_left__(self):
         return self.redis_connection.llen(self.queue)
 
     def __load_and_push__(self):
-        #ps.memory_now(tag="__load_and_push__@entry")
         print "Start __load_and_push__..."
         sys.stdout.flush()
         
@@ -107,30 +77,16 @@ class Pusher(object):
                 print "sleep", self.sleep_time, "sec"
                 sys.stdout.flush()
                 time.sleep(self.sleep_time)
-        '''
-        while self.__has_pending_data__():
-            self.__load_and_push_a_batch__()
-            time.sleep(self.sleep_time)
-        print "End __load_and_push__"
-        sys.stdout.flush()
-        ps.memory_now(tag="__load_and_push__@exit")
-        '''
 
     def __load_and_push_a_batch__(self):
-        #ps.memory_now(tag="__load_and_push_a_batch__@entry")
-        print "Start __load_and_push_a_batch__...({} data left)".format(self.__num_data_left__()) 
+        print "Start __load_and_push_a_batch__...({} data left)".format(self.__num_data_left__())
         sys.stdout.flush()
         data = self.load_data()
-        #ps.memory_now(tag="__load_and_push_a_batch__@load_data")
         data = self.process_data(data)
-        #ps.memory_now(tag="__load_and_push_a_batch__@process_data")
         self.push_data_to_db(data)
-        #ps.memory_now(tag="__load_and_push_a_batch__@push_data_to_db")
-        #ps.memory_now(tag="__load_and_push_a_batch__@exit")
 
     def __first_try__(self, dummy):
         self.__load_and_push__()
-        #self.listen()
 
     def start(self):
         self.__print_start_message__()
@@ -141,20 +97,6 @@ class Pusher(object):
             except Exception as e:
                 print >> sys.stderr, "Exception on request:", e
             self.pool.wait()
-            
-        ''' This is the old flow of multi-threading. Only commented out for the future reference.
-        while self.__has_pending_data__():
-            while self.__has_heavy_load__():
-                print "workers : queue size ==>",len(self.pool.workers), self.pool._requests_queue.qsize()
-                print "sleep ", self.sleep_time
-                sys.stdout.flush()
-                time.sleep(self.sleep_time)
-            requests = threadpool.makeRequests(self.__load_and_push__, [0])
-            try:
-                for req in requests: self.pool.putRequest(req)
-            except Exception as e:
-                print >> sys.stderr, "Exception on request:", e
-        '''
 
     def load_data(self):
         count = 0
