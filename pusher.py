@@ -35,8 +35,8 @@ class Pusher(object):
         try:
             self.redis_connection = redis.StrictRedis(port=6378, password=password)
             self.redis_connection.ping()
-        except:
-            self.redis_connection = redis.StrictRedis()
+        except Exception as e:
+            sys.exit("ERROR: %s" % e)
 
     def set_channel(self, channel):
         self.channel = channel
@@ -95,7 +95,7 @@ class Pusher(object):
                 requests = threadpool.makeRequests(self.__first_try__, [0])
                 for req in requests: self.pool.putRequest(req)
             except Exception as e:
-                print >> sys.stderr, "Exception on request:", e
+                sys.exit("ERROR: %s" % e)
             self.pool.wait()
 
     def load_data(self):
