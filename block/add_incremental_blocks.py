@@ -5,24 +5,22 @@ Created on Jul 21, 2014
 @author: yutelin
 '''
 ##### Set environment #####
+
 import os
 from os.path import sys
 from sys import stdout
-import time
-import inspect
+
 def set_env():
     # 1. Append current file directory as path
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    #sys.path.append(file_dir)
     sys.path.append(file_dir+"/../")
-#     print sys.path
 
 set_env()
 ############################
 from sqlalchemy.sql.functions import func
 import signal
 from common import set_session, get_hostname_or_die
-from block.block_loader import BlockLoader
+from bitcoin_client import BitcoinClient
 from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
     ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIMESTAMP,\
     ATTRIBUTE_VIN, ATTRIBUTE_VOUT, ATTRIBUTE_COINBASE, ATTRIBUTE_TXID,\
@@ -46,7 +44,7 @@ class AddIncrementalBlocks:
     def __init__(self, query_session, update_session, rpc_url):
         self.query_session = query_session
         self.update_session = update_session
-        self.block_loader = BlockLoader(rpc_url=rpc_url)
+        self.bitcoin_client = BitcoinClient(rpc_url=rpc_url)
     
         self.caught_term_signal = False
         self.__register_signals__()
@@ -77,7 +75,7 @@ class AddIncrementalBlocks:
         
         #2. Process new blocks by calling RPC call getblocksince
         if block_hash:
-            new_blocks = self.block_loader.get_block_sicne(block_hash = block_hash)
+            new_blocks = self.bitcoin_client.getblocksince(block_hash)
             #print new_blocks
             self.__process_new_blocks__(blocks = new_blocks)
         else:
@@ -179,7 +177,7 @@ class AddIncrementalBlocks:
             print new_block.__dict__
             
             #2. Get transactions from the block
-            txs = self.block_loader.get_block_txs(block_hash = block.get(ATTRIBUTE_HASH))
+            txs = self.bitcoin_client.getblocktxs(block.get(ATTRIBUTE_HASH))
             
             #3. Iterate through txs
             for tx in txs:

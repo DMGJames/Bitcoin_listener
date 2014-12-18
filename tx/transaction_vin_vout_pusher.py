@@ -23,7 +23,7 @@ from constants import ATTRIBUTE_BLOCK,\
     DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME,\
     DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_ADDRESS_POOL_SIZE, ATTRIBUTE_HEIGHT,\
     DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_COINBASE
-from block.block_loader import BlockLoader
+from bitcoin_client import BitcoinClient
 from models import TransactionInput, TransactionOutput
 from common import set_session, get_hostname_or_die
 from sqlalchemy.sql.functions import func
@@ -49,7 +49,7 @@ class TransactionVinVoutPusher(Pusher):
         self.query_session = query_session
         self.start_height = start_height
         self.end_height = end_height
-        self.block_loader = BlockLoader(rpc_url=rpc_url)
+        self.bitcoin_client = BitcoinClient(rpc_url=rpc_url)
         self.query_lock = threading.Lock()
         self.load_lock = threading.Lock()
         
@@ -61,7 +61,7 @@ class TransactionVinVoutPusher(Pusher):
         print "start:", self.start_height
         
         if not self.end_height:
-            self.end_height = self.block_loader.get_block_count()
+            self.end_height = self.bitcoin_client.getblockcount()
         print "end:", self.end_height
 
     def listen(self):
@@ -76,7 +76,7 @@ class TransactionVinVoutPusher(Pusher):
         print "load data:",load_height
         result = []
         if not self.__check_block__(load_height):
-            data = self.block_loader.get_block(load_height)
+            data = self.bitcoin_client.getblock(load_height)
             result.append(data)
         return result
 
