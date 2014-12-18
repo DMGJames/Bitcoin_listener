@@ -182,10 +182,15 @@ class AddIncrementalBlocks:
             #3. Iterate through txs
             for tx in txs:
                 #3.1 Process transaction
-                new_transaction = BtcTransaction(id=tx_id,
-                                                 hash=tx.get(ATTRIBUTE_TXID),
-                                                 blockID=block.get(ATTRIBUTE_HEIGHT),
-                                                 pushed_from=get_hostname_or_die())
+                hash = tx.get(ATTRIBUTE_TXID)
+                is_coinbase = self.__is_coinbase__(tx)
+                new_transaction = BtcTransaction(
+                    id=tx_id,
+                    hash=hash,
+                    blockID=block.get(ATTRIBUTE_HEIGHT),
+                    is_coinbase=is_coinbase,
+                    pushed_from=get_hostname_or_die()
+                )
                 tx_id += 1
 #                 print new_transaction.__dict__
                 new_items.append(new_transaction) 
@@ -254,7 +259,11 @@ class AddIncrementalBlocks:
             finally:
                 self.update_session.close()
             print "Finish adding block: ", block.get(ATTRIBUTE_HEIGHT), "----------------------------------------------------------------------------"
-        
+
+    def __is_coinbase__(self, tx):
+        vin = tx.get(ATTRIBUTE_VIN)
+        return vin[0].get(ATTRIBUTE_COINBASE) is not None
+
 env_setting = 'local'
 if __name__ == '__main__':
     env_setting = sys.argv[1]
