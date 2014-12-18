@@ -21,10 +21,11 @@ from sqlalchemy.sql.functions import func
 import signal
 from common import set_session, get_hostname_or_die
 from bitcoin_client import BitcoinClient
-from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
-    ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIME,\
-    ATTRIBUTE_VIN, ATTRIBUTE_VOUT, ATTRIBUTE_COINBASE, ATTRIBUTE_TXID,\
-    ATTRIBUTE_SCRIPT_PUB_KEY, ATTRIBUTE_ADDRESSES, ATTRIBUTE_VALUE
+from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED, \
+    ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIME, \
+    ATTRIBUTE_VIN, ATTRIBUTE_VOUT, ATTRIBUTE_COINBASE, ATTRIBUTE_TXID, \
+    ATTRIBUTE_SCRIPT_PUB_KEY, ATTRIBUTE_ADDRESSES, ATTRIBUTE_VALUE, \
+    ATTRIBUTE_SCRIPT_SIG, ATTRIBUTE_HEX
 from models import BtcBlock, BtcTransaction, BtcInput, BtcOutput
 
 
@@ -216,21 +217,33 @@ class AddIncrementalBlocks:
                 
                 #3.2 Process VIN
                 vin = tx.get(ATTRIBUTE_VIN)
+
                 for offset, vin_data in enumerate(vin):
                     if is_coinbase:
-                        new_input = BtcInput(id=input_id,
-                                             txHash=hash,
-                                             outputHash="\0" * 32,
-                                             outputN=-1,
-                                             offset=offset,
-                                             pushed_from=get_hostname_or_die())
+                        script_sig = vin_data.get(ATTRIBUTE_COINBASE)
                     else:
-                        new_input = BtcInput(id=input_id,
-                                             txHash=hash,
-                                             outputHash=vin_data.get(ATTRIBUTE_TXID),
-                                             outputN=vin_data.get(ATTRIBUTE_VOUT),
-                                             offset=offset,
-                                             pushed_from=get_hostname_or_die())
+                        script_sig = vin_data.get(ATTRIBUTE_SCRIPT_SIG) \
+                                             .get(ATTRIBUTE_HEX)
+                    if is_coinbase:
+                        new_input = BtcInput(
+                            id=input_id,
+                            txHash=hash,
+                            outputHash="\0" * 32,
+                            outputN=-1,
+                            script_sig=script_sig,
+                            offset=offset,
+                            pushed_from=get_hostname_or_die()
+                        )
+                    else:
+                        new_input = BtcInput(
+                            id=input_id,
+                            txHash=hash,
+                            outputHash=vin_data.get(ATTRIBUTE_TXID),
+                            outputN=vin_data.get(ATTRIBUTE_VOUT),
+                            script_sig=script_sig,
+                            offset=offset,
+                            pushed_from=get_hostname_or_die()
+                        )
                     input_id += 1
 #                         print new_input.__dict__
                     new_items.append(new_input)
