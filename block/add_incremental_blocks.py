@@ -198,16 +198,16 @@ class AddIncrementalBlocks:
                 #3.2 Process VIN
                 vin = tx.get(ATTRIBUTE_VIN)
                 for offset, vin_data in enumerate(vin):
-                    if(vin_data.get(ATTRIBUTE_COINBASE)):
+                    if is_coinbase:
                         new_input = BtcInput(id=input_id,
-                                             txHash=tx.get(ATTRIBUTE_TXID),
-                                             outputHash='0000000000000000000000000000000000000000000000000000000000000000',
+                                             txHash=hash,
+                                             outputHash="\0" * 32,
                                              outputN=-1,
                                              offset=offset,
                                              pushed_from=get_hostname_or_die())
                     else:
                         new_input = BtcInput(id=input_id,
-                                             txHash=tx.get(ATTRIBUTE_TXID),
+                                             txHash=hash,
                                              outputHash=vin_data.get(ATTRIBUTE_TXID),
                                              outputN=vin_data.get(ATTRIBUTE_VOUT),
                                              offset=offset,
