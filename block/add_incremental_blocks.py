@@ -71,16 +71,14 @@ class AddIncrementalBlocks:
     def add_incremental_blocks(self):
         #1. Get latest block hash
         block_hash = self.__get_latest_block_hash__()
+        if block_hash is None:
+            block_hash = self.__add_genesis_block__()
         print "Latest block hash:", block_hash
         
         #2. Process new blocks by calling RPC call getblocksince
-        if block_hash:
-            new_blocks = self.bitcoin_client.getblocksince(block_hash)
-            #print new_blocks
-            self.__process_new_blocks__(blocks = new_blocks)
-        else:
-            print "Latest block hash is None. ERROR! exit!"
-        
+        new_blocks = self.bitcoin_client.getblocksince(block_hash)
+        self.__process_new_blocks__(blocks = new_blocks)
+
     def __get_latest_block_hash__(self):
         result = None
         latest_block_id = self.query_session.query(func.max(BtcBlock.id)).first()
@@ -88,6 +86,27 @@ class AddIncrementalBlocks:
             latest_block = self.query_session.query(BtcBlock).filter(BtcBlock.id == latest_block_id[0]).first()
             if latest_block: result = latest_block.hash 
         return result
+
+    def __add_genesis_block__(self):
+        genesis_hash = self.bitcoin_client.getblockhash(0)
+        genesis_block = self.bitcoin_client.getblock(genesis_hash)
+        item = BtcBlock(
+            id=0,
+            hash=genesis_hash,
+            time=genesis_block.get(ATTRIBUTE_TIMESTAMP),
+            pushed_from=get_hostname_or_die()
+        )
+        self.update_session.add(item)
+        try:
+            self.update_session.commit()
+            print "Added genesis block"
+            return genesis_hash
+        except Exception as e:
+            self.update_session.rollback()
+            print >> sys.stderr, "Adding genesis block failed"
+            raise
+        finally:
+            self.update_session.close()
     
     def __process_new_blocks__(self, blocks):
         added_blocks = blocks[ATTRIBUTE_ADDED]
