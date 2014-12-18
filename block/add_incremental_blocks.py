@@ -22,7 +22,7 @@ import signal
 from common import set_session, get_hostname_or_die
 from bitcoin_client import BitcoinClient
 from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED,\
-    ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIMESTAMP,\
+    ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIME,\
     ATTRIBUTE_VIN, ATTRIBUTE_VOUT, ATTRIBUTE_COINBASE, ATTRIBUTE_TXID,\
     ATTRIBUTE_SCRIPT_PUB_KEY, ATTRIBUTE_ADDRESSES, ATTRIBUTE_VALUE
 from models import BtcBlock, BtcTransaction, BtcInput, BtcOutput
@@ -93,7 +93,7 @@ class AddIncrementalBlocks:
         item = BtcBlock(
             id=0,
             hash=genesis_hash,
-            time=genesis_block.get(ATTRIBUTE_TIMESTAMP),
+            time=genesis_block.get(ATTRIBUTE_TIME),
             pushed_from=get_hostname_or_die()
         )
         self.update_session.add(item)
@@ -190,7 +190,7 @@ class AddIncrementalBlocks:
             #1. Add block
             new_block = BtcBlock(id=block.get(ATTRIBUTE_HEIGHT),
                                  hash=block.get(ATTRIBUTE_HASH),
-                                 time=block.get(ATTRIBUTE_TIMESTAMP),
+                                 time=block.get(ATTRIBUTE_TIME),
                                  pushed_from=get_hostname_or_die())
             new_items.append(new_block)
             print new_block.__dict__

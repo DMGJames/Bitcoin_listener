@@ -5,7 +5,7 @@ Created on Jun 11, 2014
 '''
 import os
 
-ATTRIBUTE_TIMESTAMP               = 'timestamp'
+ATTRIBUTE_TIME                    = 'time'
 ATTRIBUTE_LAST_NODE_TIMESTAMP     = 'last_node_timestamp'
 ATTRIBUTE_NODE                    = 'node'
 ATTRIBUTE_CITY                    = 'city'
