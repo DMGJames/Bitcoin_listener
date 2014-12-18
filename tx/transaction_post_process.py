@@ -25,7 +25,7 @@ from constants import ATTRIBUTE_BLOCK_HEIGHT, ATTRIBUTE_TXID,\
     ATTRIBUTE_BLOCK_HASH
 import httplib2
 import threadpool
-from bitcoinrpc.proxy import AuthServiceProxy
+from bitcoin_client import BitcoinClient
 
 LOCK_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "transaction_post_process.lock") 
 def is_process_running():
@@ -60,10 +60,10 @@ class TransactionPostProcess():
         result = (None,None)
         rpc_tx = blockhash = block = height = None
         try:
-            access = AuthServiceProxy(DEFAULT_BITCOIND_RPC_URL)
-            rpc_tx = access.getrawtransaction(txid, 1)
+            client = BitcoinClient(DEFAULT_BITCOIND_RPC_URL)
+            rpc_tx = client.getrawtransaction(txid, 1)
             blockhash = rpc_tx.get(ATTRIBUTE_BLOCKHASH)
-            block = access.getblock(blockhash)
+            block = client.getblock(blockhash)
             height = block.get(ATTRIBUTE_HEIGHT)
             result =  (height, blockhash)
         except Exception, e:
