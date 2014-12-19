@@ -8,7 +8,7 @@ Created on Jul 21, 2014
 
 import os
 from os.path import sys
-from sys import stdout
+from sys import stdout, stderr
 
 def set_env():
     # 1. Append current file directory as path
@@ -49,6 +49,10 @@ class AddIncrementalBlocks:
     
         self.caught_term_signal = False
         self.__register_signals__()
+
+        self.tx_id = 1
+        self.input_id = 1
+        self.output_id = 1
     
     def __register_signals__(self):
         uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
@@ -73,8 +77,10 @@ class AddIncrementalBlocks:
         #1. Get latest block hash
         block_hash = self.__get_latest_block_hash__()
         if block_hash is None:
+            print "No block found"
             block_hash = self.__add_genesis_block__()
-        print "Latest block hash:", block_hash
+        else:
+            print "Latest block hash:", block_hash
         
         #2. Process new blocks by calling RPC call getblocksince
         new_blocks = self.bitcoin_client.getblocksince(block_hash)
@@ -91,24 +97,9 @@ class AddIncrementalBlocks:
     def __add_genesis_block__(self):
         genesis_hash = self.bitcoin_client.getblockhash(0)
         genesis_block = self.bitcoin_client.getblock(genesis_hash)
-        item = BtcBlock(
-            id=0,
-            hash=genesis_hash,
-            time=genesis_block.get(ATTRIBUTE_TIME),
-            pushed_from=get_hostname_or_die()
-        )
-        self.update_session.add(item)
-        try:
-            self.update_session.commit()
-            print "Added genesis block"
-            return genesis_hash
-        except Exception as e:
-            self.update_session.rollback()
-            print >> sys.stderr, "Adding genesis block failed"
-            raise
-        finally:
-            self.update_session.close()
-    
+        self.__process_added_block__(genesis_block)
+        return genesis_hash
+
     def __process_new_blocks__(self, blocks):
         added_blocks = blocks[ATTRIBUTE_ADDED]
         removed_blocks = blocks[ATTRIBUTE_REMOVED]
@@ -177,129 +168,175 @@ class AddIncrementalBlocks:
         added_blocks = sorted(added_blocks, key=lambda k: k[ATTRIBUTE_HEIGHT])
         
         #2. Get max input/output id
-        tx_id = input_id = output_id = 1
         max_tx_id = self.query_session.query(func.max(BtcTransaction.id)).first()
-        if max_tx_id[0]: tx_id = max_tx_id[0]+1
+        if max_tx_id[0]: self.tx_id = max_tx_id[0]+1
         max_input_id = self.query_session.query(func.max(BtcInput.id)).first()
-        if max_input_id[0]: input_id = max_input_id[0]+1
+        if max_input_id[0]: self.input_id = max_input_id[0]+1
         max_output_id = self.query_session.query(func.max(BtcOutput.id)).first()
-        if max_output_id[0]: output_id = max_output_id[0]+1
+        if max_output_id[0]: self.output_id = max_output_id[0]+1
         
         #2. Iterate through blocks
         for block in added_blocks:
-            new_items = []
-            #1. Add block
-            new_block = BtcBlock(id=block.get(ATTRIBUTE_HEIGHT),
-                                 hash=block.get(ATTRIBUTE_HASH),
-                                 time=block.get(ATTRIBUTE_TIME),
-                                 pushed_from=get_hostname_or_die())
-            new_items.append(new_block)
-            print new_block.__dict__
-            
-            #2. Get transactions from the block
-            txs = self.bitcoin_client.getblocktxs(block.get(ATTRIBUTE_HASH))
-            
-            #3. Iterate through txs
-            for tx in txs:
-                #3.1 Process transaction
-                hash = tx.get(ATTRIBUTE_TXID)
-                is_coinbase = self.__is_coinbase__(tx)
-                new_transaction = BtcTransaction(
-                    id=tx_id,
-                    hash=hash,
-                    blockID=block.get(ATTRIBUTE_HEIGHT),
-                    is_coinbase=is_coinbase,
-                    pushed_from=get_hostname_or_die()
-                )
-                tx_id += 1
-#                 print new_transaction.__dict__
-                new_items.append(new_transaction) 
-                
-                #3.2 Process VIN
-                vin = tx.get(ATTRIBUTE_VIN)
+            self.__process_added_block__(block)
 
-                for offset, vin_data in enumerate(vin):
-                    if is_coinbase:
-                        script_sig = vin_data.get(ATTRIBUTE_COINBASE)
-                    else:
-                        script_sig = vin_data.get(ATTRIBUTE_SCRIPT_SIG) \
-                                             .get(ATTRIBUTE_HEX)
-                    if is_coinbase:
-                        new_input = BtcInput(
-                            id=input_id,
-                            txHash=hash,
-                            outputHash="\0" * 32,
-                            outputN=-1,
-                            script_sig=script_sig,
-                            offset=offset,
-                            pushed_from=get_hostname_or_die()
-                        )
-                    else:
-                        new_input = BtcInput(
-                            id=input_id,
-                            txHash=hash,
-                            outputHash=vin_data.get(ATTRIBUTE_TXID),
-                            outputN=vin_data.get(ATTRIBUTE_VOUT),
-                            script_sig=script_sig,
-                            offset=offset,
-                            pushed_from=get_hostname_or_die()
-                        )
-                    input_id += 1
-#                         print new_input.__dict__
-                    new_items.append(new_input)
-                     
-                #3.3 Process VOUT
-                vout = tx.get(ATTRIBUTE_VOUT)
-                for offset, vout_data in enumerate(vout):
-                    # here we use 'X' to be consistent with previous implementations, because our table does not support multisig not using P2sh
-                    address = 'X'
-                    if vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY) and vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES) and \
-                        len(vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)) == 1:
-                        address = vout_data.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)[0]
-                    new_output = BtcOutput(id=output_id,
-                                           dstAddress=address,
-                                           value=(int)(vout_data.get(ATTRIBUTE_VALUE)*100000000),
-                                           txHash=tx.get(ATTRIBUTE_TXID),
-                                           offset=offset,
-                                           pushed_from=get_hostname_or_die())
-                    output_id += 1
-#                     print new_output.__dict__
-                    new_items.append(new_output)
-                
-            #4. Commit changes
-            try:
+    def __process_added_block__(self, block):
+        items = []
+        #1. Add block
+        height = block.get(ATTRIBUTE_HEIGHT)
+        hash = block.get(ATTRIBUTE_HASH)
+
+        print "Processing block {}:{}...".format(height, hash)
+        new_block = BtcBlock(
+            id=height,
+            hash=hash,
+            time=block.get(ATTRIBUTE_TIME),
+            pushed_from=get_hostname_or_die())
+        items.append(new_block)
+
+        #2. Get transactions from the block
+        txs = self.bitcoin_client.getblocktxs(hash)
+
+        #3. Iterate through txs
+        for tx in txs:
+            self.__process_transaction__(tx, height, items)
+
+        #4. Commit changes
+        self.__commit_items__(items)
+
+    def __process_transaction__(self, tx, block_id, items):
+        #3.1 Process transaction
+        hash = tx.get(ATTRIBUTE_TXID)
+        is_coinbase = self.__is_coinbase__(tx)
+
+        new_transaction = BtcTransaction(
+            id=self.tx_id,
+            hash=hash,
+            blockID=block_id,
+            is_coinbase=is_coinbase,
+            pushed_from=get_hostname_or_die())
+        self.tx_id += 1
+        items.append(new_transaction)
+
+        #3.2 Process VIN
+        vin = tx.get(ATTRIBUTE_VIN)
+        for offset, vin_data in enumerate(vin):
+            self.__process_txin__(vin_data, tx, offset, items)
+
+        #3.3 Process VOUT
+        vout = tx.get(ATTRIBUTE_VOUT)
+        for offset, vout_data in enumerate(vout):
+            self.__process_txout__(vout_data, tx, offset, items)
+
+    def __process_txin__(self, txin, tx, offset, items):
+        if self.__is_coinbase__(tx):
+            script_sig = txin.get(ATTRIBUTE_COINBASE)
+            outputHash = "\0" * 32
+            outputN = -1
+        else:
+            script_sig = txin.get(ATTRIBUTE_SCRIPT_SIG) \
+                             .get(ATTRIBUTE_HEX)
+            outputHash = txin.get(ATTRIBUTE_TXID)
+            outputN = txin.get(ATTRIBUTE_VOUT)
+
+        new_input = BtcInput(
+            id=self.input_id,
+            txHash=tx.get(ATTRIBUTE_TXID),
+            outputHash=outputHash,
+            outputN=outputN,
+            script_sig=script_sig,
+            offset=offset,
+            pushed_from=get_hostname_or_die())
+
+        self.input_id += 1
+        items.append(new_input)
+
+    def __process_txout__(self, txout, tx, offset, items):
+        # here we use 'X' to be consistent with previous implementations,
+        # because our table does not support multisig not using P2sh
+        address = 'X'
+        script_pubkey = txout.get(ATTRIBUTE_SCRIPT_PUB_KEY)
+        addresses = script_pubkey.get(ATTRIBUTE_ADDRESSES)
+        if script_pubkey and addresses and len(addresses) == 1:
+            address = addresses[0]
+
+        new_output = BtcOutput(
+            id=self.output_id,
+            dstAddress=address,
+            value=(int)(txout.get(ATTRIBUTE_VALUE)*100000000),
+            txHash=tx.get(ATTRIBUTE_TXID),
+            offset=offset,
+            pushed_from=get_hostname_or_die())
+
+        self.output_id += 1
+        items.append(new_output)
+
+    def __commit_items__(self, items):
+        try:
+            self.__check_term_signal__()
+            statistics = self.__get_statistics__(items)
+            stdout.write("Adding %d items" % len(items))
+            is_dotting = True
+            for item in items:
                 self.__check_term_signal__()
-                print "Add:", len(new_items)
-                for item in new_items:
-                    self.__check_term_signal__()
-                    stdout.write(".")
-                    stdout.flush()
-#                     print item.__dict__
-                    self.update_session.add(item)
-#                     print item.__class__.__name__, ":", item.id
-                print "" 
-                new_items = []
-                self.__check_term_signal__()
-                print "Adding...."
-                self.update_session.commit()
-                print "Added"
-                self.__check_term_signal__()
-            except Exception, e:
-                print "Exception on __process_added_blocks__:", e
-                self.update_session.rollback()
-                return 
-            finally:
-                self.update_session.close()
-            print "Finish adding block: ", block.get(ATTRIBUTE_HEIGHT), "----------------------------------------------------------------------------"
+                stdout.write(".")
+                stdout.flush()
+                self.update_session.add(item)
+            stdout.write(" Done\n")
+            is_dotting = False
+            print "  " \
+                  "%(block)i blocks, " \
+                  "%(tx)i transactions, " \
+                  "%(txin)i inputs, " \
+                  "%(txout)i outputs" % statistics
+
+            new_items = []
+            self.__check_term_signal__()
+            stdout.write("Committing...")
+            is_dotting = True
+            self.update_session.commit()
+            stdout.write(" Done\n")
+            is_dotting = False
+            self.__check_term_signal__()
+            return True
+        except Exception, e:
+            print >> stderr, "Exception:", e
+            if is_dotting: stdout.write(" Failed\n")
+            stdout.write("Rolling back...")
+            self.update_session.rollback()
+            stdout.write(" Done\n")
+            return False
+        finally:
+            self.update_session.close()
 
     def __is_coinbase__(self, tx):
         vin = tx.get(ATTRIBUTE_VIN)
         return vin[0].get(ATTRIBUTE_COINBASE) is not None
 
+    def __get_statistics__(self, items):
+        num_blocks = num_txs = num_txins = num_txouts = 0
+        for item in items:
+            if isinstance(item, BtcBlock):
+                num_blocks += 1
+            elif isinstance(item, BtcTransaction):
+                num_txs += 1
+            elif isinstance(item, BtcInput):
+                num_txins += 1
+            elif isinstance(item, BtcOutput):
+                num_txouts += 1
+            else:
+                raise "Unknown type"
+
+        result = {
+            "block": num_blocks,
+            "tx": num_txs,
+            "txin": num_txins,
+            "txout": num_txouts
+        }
+        return result
+        
 env_setting = 'local'
 if __name__ == '__main__':
     env_setting = sys.argv[1]
-    print "Start: ---------------------------------------------------------------------------------"
     print "Environment:" , env_setting
     if is_process_running():
         print "Process is already running, skip this round"
@@ -309,6 +346,5 @@ if __name__ == '__main__':
         update_session = set_session(env_setting=env_setting)
         adder = AddIncrementalBlocks(query_session=query_session, update_session = update_session, rpc_url = DEFAULT_LOCAL_BITCONID_RPC_URL)
         adder.add_incremental_blocks()
+        print "Adding incremental blocks completed successfully"
         remove_lock_file()
-    print "Done!"
-    print "End: -----------------------------------------------------------------------------------"
