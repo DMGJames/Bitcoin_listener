@@ -155,7 +155,7 @@ class AddIncrementalBlocks:
             self.__check_term_signal__()
             self.update_session.commit()
             self.__check_term_signal__()
-        except Exception, e:
+        except (SystemExit, Exception) as e:
             print "Exception on __process_removed_blocks__:", e
             self.update_session.rollback()
         finally:
@@ -298,7 +298,7 @@ class AddIncrementalBlocks:
             is_dotting = False
             self.__check_term_signal__()
             return True
-        except Exception, e:
+        except (SystemExit, Exception) as e:
             print >> stderr, "Exception:", e
             if is_dotting: stdout.write(" Failed\n")
             stdout.write("Rolling back...")
