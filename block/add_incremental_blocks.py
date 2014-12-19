@@ -158,6 +158,7 @@ class AddIncrementalBlocks:
         except (SystemExit, Exception) as e:
             print "Exception on __process_removed_blocks__:", e
             self.update_session.rollback()
+            remove_lock_file()
         finally:
             self.update_session.close()
                 
@@ -304,6 +305,7 @@ class AddIncrementalBlocks:
             stdout.write("Rolling back...")
             self.update_session.rollback()
             stdout.write(" Done\n")
+            remove_lock_file()
             return False
         finally:
             self.update_session.close()
