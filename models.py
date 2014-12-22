@@ -6,6 +6,18 @@ from sqlalchemy.sql.schema import Index
 
 
 Base = declarative_base()
+
+class AddressTag(Base):
+    __tablename__   = 'address_tag'
+    id              = Column(Integer, primary_key=True)
+    user_id         = Column(Integer)
+    tag             = Column(String(250))
+    address         = Column(String(250), index=True)
+    source          = Column(String(250), index=True)
+    link            = Column(String(250))
+    verified        = Column(Boolean)
+    created_at      = Column(DateTime, default=func.now())
+    updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
  
 class Node(Base):
     __tablename__   = 'node'
@@ -25,16 +37,18 @@ class Node(Base):
     user_agent      = Column(String(250), index=True)
     org             = Column(String(250), index=True)
     asn             = Column(String(250), index=True)
-    created_at      = Column(DateTime, default=func.now())    
+    pushed_from     = Column(String(25), index=True)
+    created_at      = Column(DateTime, default=func.now())
     updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
-    
+
 class NodeActivity(Base):
     __tablename__   = 'node_activity'
     id              = Column(Integer, primary_key=True, index=True)
     address         = Column(String(250), index=True)
     status          = Column(String(250), index=True)
+    pushed_from     = Column(String(25), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
-    
+
 class Transaction(Base):
     __tablename__   = 'transaction'
     txid            = Column(String(250),primary_key=True, index=True)
@@ -47,10 +61,11 @@ class Transaction(Base):
     has_pubkey      = Column(Boolean, index=True)
     has_pubkeyhash  = Column(Boolean, index=True)
     has_scripthash  = Column(Boolean, index=True)
+    pushed_from     = Column(String(25), index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction:", self.txid
-    
+
 class TransactionInfo(Base):
     __tablename__   = "transaction_info"
     #id              = Column(Integer, primary_key=True)
@@ -59,6 +74,7 @@ class TransactionInfo(Base):
     received_at     = Column(DateTime,index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
     json_string     = Column(Text)
+    pushed_from     = Column(String(25), index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction info:", self.txid, self.relayed_from
@@ -71,14 +87,15 @@ class TransactionOutput(Base):
     block_hash      = Column(String(250), index=True)
     block_height    = Column(Integer, index=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
-    is_from_coinbase= Column(Boolean, index=True) 
-    
+    is_from_coinbase= Column(Boolean, index=True)
+    pushed_from     = Column(String(25), index=True)
+
     def print_pushing_message(self):
         print "Pushed transaction vout:", self.txid, self.offset, self.address
-       
+
 Index('ix_transaction_output_txid_and_offset', TransactionOutput.txid, TransactionOutput.offset)
-        
-class TransactionInput(Base):        
+
+class TransactionInput(Base):
     __tablename__   = "transaction_vin"
     txid            = Column(String(250), primary_key=True, index=True)
     offset          = Column(Integer, primary_key=True, autoincrement=False, index=True)
@@ -86,12 +103,13 @@ class TransactionInput(Base):
     block_height    = Column(Integer, index=True)
     output_txid     = Column(String(250), index=True) #TransactionOutput txid
     vout_offset     = Column(Integer, index=True) #TransactionOuput offset
-    
+    pushed_from     = Column(String(25), index=True)
+
     def print_pushing_message(self):
         print "Pushed transaction vin:", self.txid, self.offset, self.output_txid, self.vout_offset
 
 Index('ix_transaction_input_output_txid_and_vout_index', TransactionInput.output_txid, TransactionInput.vout_offset)
-    
+
 class TransactionAddressInfo(Base):
     __tablename__   = "transaction_address_info"
     address         = Column(String(250), primary_key=True, index=True)
@@ -101,35 +119,40 @@ class TransactionAddressInfo(Base):
     vin_count       = Column(Integer, index=True)
     vout_count      = Column(Integer, index=True)
     coinbase        = Column(Integer, index=True, default=0)
-    
+    pushed_from     = Column(String(25), index=True)
+
     def print_pushing_message(self):
         print "Pushed transaction address info:", self.address
-        
+
 class TransactionAddressInfoUpdate(Base):
     __tablename__   = "transaction_address_info_update"
     block_height    = Column(Integer, primary_key=True, index=True)
+    pushed_from     = Column(String(25), index=True)
     updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class Block(Base):
     __tablename__   = "block"
-    block_hash      = Column(String(250), index=True, primary_key = True)
+    block_hash      = Column(String(250), index=True, primary_key=True)
     block_height    = Column(Integer, index=True)
     is_orphaned     = Column(Boolean, index=True)
+    pushed_from     = Column(String(25), index=True)
     created_at      = Column(DateTime)
-    
-##### Those are manually added
+
 class BtcBlock(Base):
     __tablename__   = "blocks"
     id              = Column(BigInteger, primary_key=True)
     hash            = Column(String(64))
     time            = Column(BigInteger)
-    
+    pushed_from     = Column(String(25), index=True)
+
 class BtcTransaction(Base):
     __tablename__   = "transactions"
     id              = Column(BigInteger, primary_key=True)
     hash            = Column(String(64))
     blockID         = Column(BigInteger)
+    is_coinbase     = Column(Boolean, index=True)
+    pushed_from     = Column(String(25), index=True)
 
 class BtcInput(Base):
     __tablename__   = "inputs"
@@ -137,8 +160,10 @@ class BtcInput(Base):
     txHash          = Column(String(64))
     outputHash      = Column(String(64))
     outputN         = Column(Integer)
+    script_sig      = Column(String(500))
     offset          = Column(Integer)
-    
+    pushed_from     = Column(String(25), index=True)
+
 class BtcOutput(Base):
     __tablename__   = "outputs"
     id              = Column(BigInteger, primary_key=True)
@@ -146,5 +171,6 @@ class BtcOutput(Base):
     value           = Column(BigInteger)
     txHash          = Column(String(64))
     offset          = Column(Integer)
+    pushed_from     = Column(String(25), index=True)
     
 Index('txHash_2', BtcOutput.txHash, BtcOutput.offset)

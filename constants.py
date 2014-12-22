@@ -5,7 +5,7 @@ Created on Jun 11, 2014
 '''
 import os
 
-ATTRIBUTE_TIMESTAMP               = 'timestamp'
+ATTRIBUTE_TIME                    = 'time'
 ATTRIBUTE_LAST_NODE_TIMESTAMP     = 'last_node_timestamp'
 ATTRIBUTE_NODE                    = 'node'
 ATTRIBUTE_CITY                    = 'city'
@@ -39,6 +39,7 @@ ATTRIBUTE_RECEIVED_AT             = "received_at"
 ATTRIBUTE_VALUE                   = "value"
 ATTRIBUTE_VIN                     = "vin"
 ATTRIBUTE_VOUT                    = "vout"
+ATTRIBUTE_SCRIPT_SIG              = "scriptSig"
 ATTRIBUTE_SCRIPT_PUB_KEY          = "scriptPubKey"
 ATTRIBUTE_BLOCK_HEIGHT            = "block_height"
 ATTRIBUTE_BLOCK_HASH              = "block_hash"
@@ -55,15 +56,16 @@ ATTRIBUTE_HAS_PUBKEY              = "has_pubkey"
 ATTRIBUTE_HAS_PUBKEYHASH          = "has_pubkeyhash"
 ATTRIBUTE_HAS_SCRIPTHASH          = "has_scripthash"
 ATTRIBUTE_JSON_STRING             = "json_string"  
-ATTRIBUTE_BLOCK                     = "block"
-ATTRIBUTE_HASH                      = "hash"
-ATTRIBUTE_TXS                       = "txs"
-ATTRIBUTE_N                         = "n"
-ATTRIBUTE_ADDRESSES                 = "addresses"
-ATTRIBUTE_HEIGHT                    = "height"
-ATTRIBUTE_COINBASE                  = "coinbase"
-ATTRIBUTE_ADDED                     = "added"
-ATTRIBUTE_REMOVED                   = "removed"
+ATTRIBUTE_BLOCK                   = "block"
+ATTRIBUTE_HASH                    = "hash"
+ATTRIBUTE_TXS                     = "txs"
+ATTRIBUTE_N                       = "n"
+ATTRIBUTE_ADDRESSES               = "addresses"
+ATTRIBUTE_HEIGHT                  = "height"
+ATTRIBUTE_COINBASE                = "coinbase"
+ATTRIBUTE_ADDED                   = "added"
+ATTRIBUTE_REMOVED                 = "removed"
+ATTRIBUTE_HEX                     = "hex"
 
 
 FILENAME_STATE_CFG          = 'state.cfg'

@@ -9,7 +9,7 @@ import ConfigParser
 from constants import DEFAULT_NODE_QUEUE,\
     DEFAULT_NODE_CHANNEL, DEFAULT_RESOLVING_POOL_SIZE,\
     DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME,\
-    FILENAME_STATE_CFG, ATTRIBUTE_LAST_NODE_TIMESTAMP, ATTRIBUTE_TIMESTAMP,\
+    FILENAME_STATE_CFG, ATTRIBUTE_LAST_NODE_TIMESTAMP, ATTRIBUTE_TIME,\
     ATTRIBUTE_NODE, ATTRIBUTE_COUNTRY, ATTRIBUTE_HOSTNAME, ATTRIBUTE_LATITUDE, ATTRIBUTE_LONGITUDE,\
     ATTRIBUTE_START_HEIGHT, ATTRIBUTE_TIME_ZONE, ATTRIBUTE_USER_AGENT, ATTRIBUTE_VERSION, ATTRIBUTE_ASN,\
     ATTRIBUTE_ORG, ATTRIBUTE_CITY, ATTRIBUTE_NODE_DATA, ATTRIBUTE_IP_ADDRESS, ATTRIBUTE_PORT
@@ -19,7 +19,7 @@ import time
 import gevent
 from models import Node
 from pusher import Pusher
-from common import set_session
+from common import set_session, get_hostname_or_die
 import sys
 from psutil_wrapper import PsutilWrapper
 import gc
@@ -55,7 +55,7 @@ class NodePusher(Pusher):
         ps = PsutilWrapper(os.getpid())
         node_ips = data
         current_timestamp = int(math.floor(time.time()))
-        timed_node_ips = [{ATTRIBUTE_NODE:node_ip, ATTRIBUTE_TIMESTAMP:current_timestamp} for node_ip in node_ips]
+        timed_node_ips = [{ATTRIBUTE_NODE:node_ip, ATTRIBUTE_TIME:current_timestamp} for node_ip in node_ips]
 
         # 1. Get last timestamp from DB
         last_node_timestamp = self.__get_last_node_timestamp__()
@@ -63,7 +63,7 @@ class NodePusher(Pusher):
         sys.stdout.flush()
 
         # 2. filter old nodes
-        timed_node_ips = [timed_node_ip for timed_node_ip in timed_node_ips if timed_node_ip[ATTRIBUTE_TIMESTAMP] > last_node_timestamp]
+        timed_node_ips = [timed_node_ip for timed_node_ip in timed_node_ips if timed_node_ip[ATTRIBUTE_TIME] > last_node_timestamp]
         print "To upload nodes: "
         print json.dumps(timed_node_ips, indent=4)
         sys.stdout.flush()
@@ -96,21 +96,22 @@ class NodePusher(Pusher):
 
     def __create_node__(self, timed_node_ip):
         node_data = timed_node_ip.get(ATTRIBUTE_NODE_DATA, {})
-        result = Node(address      = timed_node_ip.get(ATTRIBUTE_NODE),
-                      ip_address   = timed_node_ip.get(ATTRIBUTE_IP_ADDRESS),
-                      port         = timed_node_ip.get(ATTRIBUTE_PORT),  
-                      timestamp    = timed_node_ip.get(ATTRIBUTE_TIMESTAMP),
-                      asn          = node_data.get(ATTRIBUTE_ASN),
-                      city         = node_data.get(ATTRIBUTE_CITY),
-                      country      = node_data.get(ATTRIBUTE_COUNTRY),
-                      hostname     = node_data.get(ATTRIBUTE_HOSTNAME),
-                      latitude     = node_data.get(ATTRIBUTE_LATITUDE),
-                      longitude    = node_data.get(ATTRIBUTE_LONGITUDE),
-                      org          = node_data.get(ATTRIBUTE_ORG),
-                      start_height = node_data.get(ATTRIBUTE_START_HEIGHT),
-                      time_zone    = node_data.get(ATTRIBUTE_TIME_ZONE),
-                      user_agent   = node_data.get(ATTRIBUTE_USER_AGENT), 
-                      version      = node_data.get(ATTRIBUTE_VERSION))
+        result = Node(address=timed_node_ip.get(ATTRIBUTE_NODE),
+                      ip_address=timed_node_ip.get(ATTRIBUTE_IP_ADDRESS),
+                      port=timed_node_ip.get(ATTRIBUTE_PORT),
+                      timestamp=timed_node_ip.get(ATTRIBUTE_TIME),
+                      asn=node_data.get(ATTRIBUTE_ASN),
+                      city=node_data.get(ATTRIBUTE_CITY),
+                      country=node_data.get(ATTRIBUTE_COUNTRY),
+                      hostname=node_data.get(ATTRIBUTE_HOSTNAME),
+                      latitude=node_data.get(ATTRIBUTE_LATITUDE),
+                      longitude=node_data.get(ATTRIBUTE_LONGITUDE),
+                      org=node_data.get(ATTRIBUTE_ORG),
+                      start_height=node_data.get(ATTRIBUTE_START_HEIGHT),
+                      time_zone=node_data.get(ATTRIBUTE_TIME_ZONE),
+                      user_agent=node_data.get(ATTRIBUTE_USER_AGENT),
+                      version=node_data.get(ATTRIBUTE_VERSION),
+                      pushed_from=get_hostname_or_die())
         return result
 
     def __get_last_node_timestamp__(self):

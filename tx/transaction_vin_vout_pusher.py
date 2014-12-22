@@ -23,9 +23,9 @@ from constants import ATTRIBUTE_BLOCK,\
     DEFAULT_LOADING_BATCH_SIZE, DEFAULT_SLEEP_TIME,\
     DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_ADDRESS_POOL_SIZE, ATTRIBUTE_HEIGHT,\
     DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_COINBASE
-from block.block_loader import BlockLoader
+from bitcoin_client import BitcoinClient
 from models import TransactionInput, TransactionOutput
-from common import set_session
+from common import set_session, get_hostname_or_die
 from sqlalchemy.sql.functions import func
 from pusher import Pusher
 import threading
@@ -49,7 +49,7 @@ class TransactionVinVoutPusher(Pusher):
         self.query_session = query_session
         self.start_height = start_height
         self.end_height = end_height
-        self.block_loader = BlockLoader(rpc_url=rpc_url)
+        self.bitcoin_client = BitcoinClient(rpc_url=rpc_url)
         self.query_lock = threading.Lock()
         self.load_lock = threading.Lock()
         
@@ -61,7 +61,7 @@ class TransactionVinVoutPusher(Pusher):
         print "start:", self.start_height
         
         if not self.end_height:
-            self.end_height = self.block_loader.get_block_count()
+            self.end_height = self.bitcoin_client.getblockcount()
         print "end:", self.end_height
 
     def listen(self):
@@ -76,7 +76,7 @@ class TransactionVinVoutPusher(Pusher):
         print "load data:",load_height
         result = []
         if not self.__check_block__(load_height):
-            data = self.block_loader.get_block(load_height)
+            data = self.bitcoin_client.getblock(load_height)
             result.append(data)
         return result
 
@@ -143,12 +143,13 @@ class TransactionVinVoutPusher(Pusher):
                     output_txid = vin.get(ATTRIBUTE_TXID,"coinbase")
                     if vin.get(ATTRIBUTE_COINBASE): is_from_coinbase = True
                     vout_offset = vin.get(ATTRIBUTE_VOUT, -1)
-                    tx_input = TransactionInput(txid = txid, 
-                                                offset = offset,
-                                                block_height = block_height,
-                                                block_hash = block_hash,
-                                                output_txid = output_txid, 
-                                                vout_offset = vout_offset)
+                    tx_input = TransactionInput(txid=txid,
+                                                offset=offset,
+                                                block_height=block_height,
+                                                block_hash=block_hash,
+                                                output_txid=output_txid,
+                                                vout_offset=vout_offset,
+                                                pushed_from=get_hostname_or_die())
                     tx_inputs.append(tx_input)
                  
                 #2. Get transaction outputs
@@ -159,26 +160,27 @@ class TransactionVinVoutPusher(Pusher):
                     address = None
                     if script_pub_key.get(ATTRIBUTE_TYPE) == ATTRIBUTE_NULLDATA:
                         address = ATTRIBUTE_NULLDATA
-                        tx_output = TransactionOutput(txid = txid,
-                                                       offset = offset,
-                                                       address = address,
-                                                       block_hash = block_hash,
-                                                       block_height = block_height,
-                                                       value = value,
-                                                       is_from_coinbase = is_from_coinbase)
+                        tx_output = TransactionOutput(txid=txid,
+                                                      offset=offset,
+                                                      address=address,
+                                                      block_hash=block_hash,
+                                                      block_height=block_height,
+                                                      value=value,
+                                                      is_from_coinbase=is_from_coinbase,
+                                                      pushed_from=get_hostname_or_die())
                         tx_outputs.append(tx_output)
                     else:
                         if vout.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES):
                             addresses = vout.get(ATTRIBUTE_SCRIPT_PUB_KEY).get(ATTRIBUTE_ADDRESSES)
                             for address in addresses:
-                                tx_output = TransactionOutput(txid = txid,
-                                                               offset = offset,
-                                                               address = address,
-                                                               block_hash = block_hash,
-                                                               block_height = block_height,
-                                                               value = value,
-                                                               is_from_coinbase = is_from_coinbase)
-                             
+                                tx_output = TransactionOutput(txid=txid,
+                                                              offset=offset,
+                                                              address=address,
+                                                              block_hash=block_hash,
+                                                              block_height=block_height,
+                                                              value=value,
+                                                              is_from_coinbase=is_from_coinbase,
+                                                              pushed_from=get_hostname_or_die())
                                 tx_outputs.append(tx_output)
         return (tx_inputs, tx_outputs)
     

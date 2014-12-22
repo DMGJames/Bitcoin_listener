@@ -1,6 +1,6 @@
 namespace :listener_pusher do
   desc "Install listener_pusher packages. Note: this will overwrite all other cron jobs!!"
-  task :setup => [:install_dependencies, :add_cron_job]
+  task :setup => [:install_dependencies, :add_cron_job, :upload_hostname_file]
   
   task :install_dependencies do
     on roles(:all) do |host|
@@ -34,6 +34,13 @@ namespace :listener_pusher do
       unless config.include? cron_job
         execute %Q{echo "#{cron_job}" | crontab -}
       end
+    end
+  end
+
+  task :upload_hostname_file do
+    on roles(:all) do |host|
+      #execute "scp "
+      upload_file "shared/HOSTNAME.erb", "#{shared_path}/HOSTNAME"
     end
   end
 
@@ -101,6 +108,22 @@ namespace :listener_pusher do
       unless config.include? cron_job
         execute %Q{echo "#{cron_job}" | crontab -}
       end
+    end
+  end
+end
+
+def upload_file(from, to)
+  [
+    "lib/capistrano/templates/#{from}",
+    File.expand_path("../../templates/#{from}", __FILE__)
+  ].each do |path|
+    if File.file?(path)
+      info "Found #{path}"
+      erb = File.read(path)
+      upload! StringIO.new(ERB.new(erb, nil, '-').result(binding)), to
+      break
+    else
+      warn "#{path} doesn't exist"
     end
   end
 end

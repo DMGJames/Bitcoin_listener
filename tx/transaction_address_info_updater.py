@@ -16,7 +16,7 @@ def set_env():
 
 set_env()
 ############################
-from common import set_session
+from common import set_session, get_hostname_or_die
 from models import TransactionAddressInfoUpdate, TransactionOutput,\
     TransactionAddressInfo, TransactionInput
 from sqlalchemy.sql.expression import desc
@@ -149,7 +149,7 @@ class TransactionAddressInfoUpdater:
         print all_addresses
          
         #2. Load all address info to map, if doesn't exist, create a new one
-        self.__load_missing_address_info_to_dict__(all_addresses = all_addresses, address_info_dict=address_info_dict)
+        self.__load_missing_address_info_to_dict__(all_addresses=all_addresses, address_info_dict=address_info_dict)
         for _, address_info in address_info_dict.iteritems():
             print address_info.__dict__
          
@@ -163,7 +163,7 @@ class TransactionAddressInfoUpdater:
             address_info.balance += txn_vout.value
             if txn_vout.is_from_coinbase: address_info.coinbase += 1 
         
-    def __process_transaction_input_at_height__(self, block_height, address_info_dict = {}):
+    def __process_transaction_input_at_height__(self, block_height, address_info_dict={}):
         print "Process input at:", block_height
         #1. Load all inputs at the same height
         txn_vins = self.query_session.query(TransactionInput).\
@@ -189,7 +189,7 @@ class TransactionAddressInfoUpdater:
         print txn_vin_vout_dict
          
         #3. Load all address info to map, if doesn't exist, create a new one
-        self.__load_missing_address_info_to_dict__(all_addresses = all_addresses,address_info_dict=address_info_dict)
+        self.__load_missing_address_info_to_dict__(all_addresses=all_addresses,address_info_dict=address_info_dict)
         for _, address_info in address_info_dict.iteritems():
             print address_info.__dict__
          
@@ -207,7 +207,8 @@ class TransactionAddressInfoUpdater:
         
         
     def __finish_update_at_height__(self, block_height,address_info_dict):
-        update_obj = TransactionAddressInfoUpdate(block_height = block_height)
+        update_obj = TransactionAddressInfoUpdate(block_height=block_height,
+                                                  pushed_from=get_hostname_or_die())
         try:
             for _, address_info in address_info_dict.iteritems():
                 self.update_session.merge(address_info)
@@ -233,13 +234,14 @@ class TransactionAddressInfoUpdater:
         # Add new address_infos 
         for address in all_addresses:
             if not address in address_info_dict:
-                new_address_info = TransactionAddressInfo(address = address,
-                                                          received_value = 0,
-                                                          spent_value = 0,
-                                                          balance = 0,
-                                                          vin_count = 0,
-                                                          vout_count = 0,
-                                                          coinbase = 0)
+                new_address_info = TransactionAddressInfo(address=address,
+                                                          received_value=0,
+                                                          spent_value=0,
+                                                          balance=0,
+                                                          vin_count=0,
+                                                          vout_count=0,
+                                                          coinbase=0,
+                                                          pushed_from=get_hostname_or_die())
                 address_info_dict[address] = new_address_info
         self.query_session.close()
 
@@ -253,9 +255,9 @@ if __name__ == '__main__':
     ### Pusher
     query_session = set_session(env_setting=env_setting)
     update_session = set_session(env_setting=env_setting)
-    pusher = TransactionAddressInfoUpdater(update_session = update_session, 
-                                      query_session =query_session,
-                                      start_height=start,
-                                      end_height=end)
+    pusher = TransactionAddressInfoUpdater(update_session=update_session,
+                                           query_session=query_session,
+                                           start_height=start,
+                                           end_height=end)
     pusher.start()
     print "Done!"
