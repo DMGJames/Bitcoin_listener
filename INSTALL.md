@@ -1,13 +1,15 @@
-Last updated (6/21/2014)
+Last updated (12/23/2014)
 
 # Components
 
-There are 4 components:
+There are 6 components:
 
 1. Listener - the modified bitcoin C++ source code which is used to track the data from the network. Currently we push all node and transaction data to redis, so other program and read it and perform further operation.
 1. NodePusher - read node data from redis and push it to RDS. Listener dependency.
 1. TransactionPusher - read transaction data from redis and put it to RDS. Listener dependency. 
 1. NodePinger - find all nodes from RDS with non-NULL user_agent fields and ping those nodes constantly to see if they are active. We should put this component in a dedicated instance to avoid being backlisted. (Meaning no bitcoind or other scripts running)
+1. AddIncrementalBlocks - update blockchain since the last block found in the database
+1. TransactionPostProcess - update block information for transaction data pushed by TransactionPusher. The block information could be missing because those pushed transactions are raw transactions. They might have not been packed in blocks while being pushed.  
 
 ---
 
@@ -142,7 +144,7 @@ cd geoip
 sh geoip/update.sh
 ```
 
-###Test running:
+### Test running:
 `python main.py -n= -e test`
 
 ### Add cron job to update geoip
@@ -153,9 +155,10 @@ crontab -e
 ```
 
 ### Add to daemon
+
+Add the following in `sudo vi /etc/init/node_pusher.conf`
+
 ```
-sudo vi /etc/init/node_pusher.conf
-##### add the following
 description "node_pusher"
 
 start on filesystem
@@ -185,11 +188,14 @@ Run it manually: `python node_pusher_daemon_runner.py start test`
 
 Check the logs in log folder
 
+### Results
+The node data are pushed from redis queue to table *node*.
+
 ---
-### TransactionPusher
+## TransactionPusher
 Go through NodePusher installation and source code download.
 
-###Test running:
+### Test running:
 
 `python transaction_pusher.py test`
 
@@ -228,12 +234,16 @@ Run it manually: `python transaction_pusher_daemon_runner.py start test`
 
 Check the logs in log folder
 
+### Results
+
+The transaction date are pushed from redis queue to tables *transaction* and *transaction_info*.
+
 ---
 
-### NodePinger
+## NodePinger
 Go through NodePusher installation and source code download.
 
-###Test running:
+### Test running:
 
 `python node_pinger.py test`
 
@@ -271,5 +281,41 @@ Run it manually: `python node_pinger_daemon_runner.py start test`
 
 Check the logs in log folder
 
+### Results
+
+The activities of nodes being pinged are pushed to table *node_activity*.
+
 ---
+
+## AddIncrementalBlocks
+
+### Add to crontab
+
+For example, add the following in crontab:
+
+`*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/add_incremental_blocks.py prod `
+
+Run it manually: `python add_incremental_blocks.py prod`
+
+### Results
+
+The blockchain info&mdash;recorded in tables *blocks*, *transactions*, *inputs*, and *outputs*&mdash;is updated.
+
+---
+
+## TransactionPostProcess
+
+### Add to crontab
+
+For example, add the following in crontab:
+
+`*/10 * * * * cd /home/mcdeploy/listener_pusher/current && tx/transaction_post_process.py prod `
+
+Run it manually: `python transaction_post_process.py prod`
+
+### Results
+
+The attributes *block_height* and *block_hash* in table *transaction* are updated if available.
+
+
 
