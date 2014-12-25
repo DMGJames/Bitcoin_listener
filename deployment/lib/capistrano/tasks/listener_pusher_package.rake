@@ -1,6 +1,9 @@
 namespace :listener_pusher do
   desc "Install listener_pusher packages. Note: this will overwrite all other cron jobs!!"
-  task :setup => [:install_dependencies, :add_cron_job, :upload_hostname_file]
+  task :setup => [:install_dependencies, \
+                  :add_cron_job, \
+                  :upload_hostname_file, \
+                  :link_hostname_file]
   
   task :install_dependencies do
     on roles(:all) do |host|
@@ -39,8 +42,14 @@ namespace :listener_pusher do
 
   task :upload_hostname_file do
     on roles(:all) do |host|
-      #execute "scp "
       upload_file "shared/HOSTNAME.erb", "#{shared_path}/HOSTNAME"
+    end
+  end
+
+  task :link_hostname_file do
+    on roles(:all) do |host|
+      execute "cd /home/mcdeploy/listener_pusher/current && " \
+              "ln -s #{shared_path}/HOSTNAME HOSTNAME"
     end
   end
 

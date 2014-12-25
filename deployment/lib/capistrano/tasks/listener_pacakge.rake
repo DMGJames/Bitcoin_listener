@@ -1,7 +1,13 @@
 namespace :listener do
   ######################################## Setup listener environment ########################################
   desc "Install all listener package"
-  task :setup => [:stop_bitcoind, :apt_get_update, :install_gcc, :install_redis, :install_bitcoind_dependencies]
+  task :setup => [:stop_bitcoind, \
+                  :apt_get_update, \
+                  :install_gcc, \
+                  :install_redis, \
+                  :install_bitcoind_dependencies, \
+                  :install_redis3m, \
+                  :set_ld_library_path]
 
   desc "Stop bitcoind if it is running"
   task :stop_bitcoind do
@@ -93,9 +99,28 @@ namespace :listener do
     end
   end
 
+  desc "Install redis3m"
+  task :install_redis3m do
+    on roles(:app) do |host|
+      sudo "apt-get install -y libmsgpack-dev libboost-thread-dev libboost-date-time-dev libboost-test-dev libboost-filesystem-dev libboost-system-dev libhiredis-dev cmake build-essential"
+      execute "git clone git@github.com:wpwlee/redis3m.git"
+      execute "cd /home/mcdeploy/redis3m && " \
+              "cmake . && make && sudo make install"
+      execute "rm -rf redis3m"
+    end
+  end
+
+  desc "Set LD_LIBRARY_PATH"
+  task :set_ld_library_path do
+    on roles(:app) do |host|
+      upload! "lib/capistrano/templates/ld_library_path.sh", "/tmp"
+      sudo "mv /tmp/ld_library_path.sh /etc/profile.d"
+    end
+  end
+
   ######################################## Install Bitcoind ########################################
   desc "Install bitcoin"
-  task :install_bitcoind => [:build_bitcoind, :set_bitcoind_config,:run_bitcoind_daemon]
+  task :install_bitcoind => [:build_bitcoind, :set_bitcoind_config]
 
   desc "Build bitcoind"
   task :build_bitcoind do
