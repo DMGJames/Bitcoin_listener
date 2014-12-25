@@ -120,7 +120,7 @@ namespace :listener do
 
   ######################################## Install Bitcoind ########################################
   desc "Install bitcoin"
-  task :install_bitcoind => [:build_bitcoind, :set_bitcoind_config,:run_bitcoind_daemon]
+  task :install_bitcoind => [:build_bitcoind, :set_bitcoind_config]
 
   desc "Build bitcoind"
   task :build_bitcoind do
