@@ -1,4 +1,3 @@
-set :server, '54.179.183.108'
 set :user, 'mcdeploy'
 role :app, [fetch(:user) + "@" + fetch(:server)]
 role :web, [fetch(:user) + "@" + fetch(:server)]
@@ -8,7 +7,6 @@ set :repo_url, 'git@github.com:huuep/listener_pusher.git'
 set :branch, 'master'
 set :deploy_to, "/home/mcdeploy/listener_pusher"
 set :daemon_conf_dir, "#{fetch(:deploy_to)}/shared/daemon_conf"
-set :hostname, "listener-master"
 
 set :application, 'listener_pusher'
 
@@ -19,4 +17,3 @@ namespace :deploy do
     end
   end
 end
-
