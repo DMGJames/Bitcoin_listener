@@ -102,7 +102,7 @@ namespace :listener do
   desc "Install redis3m"
   task :install_redis3m do
     on roles(:app) do |host|
-      sudo "apt-get install libmsgpack-dev libboost-thread-dev libboost-date-time-dev libboost-test-dev libboost-filesystem-dev libboost-system-dev libhiredis-dev cmake build-essential"
+      sudo "apt-get install -y libmsgpack-dev libboost-thread-dev libboost-date-time-dev libboost-test-dev libboost-filesystem-dev libboost-system-dev libhiredis-dev cmake build-essential"
       execute "git clone git@github.com:wpwlee/redis3m.git"
       execute "cd /home/mcdeploy/redis3m && " \
               "cmake . && make && sudo make install"
