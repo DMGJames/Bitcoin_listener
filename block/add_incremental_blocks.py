@@ -239,6 +239,9 @@ class AddIncrementalBlocks:
             outputHash = txin.get(ATTRIBUTE_TXID)
             outputN = txin.get(ATTRIBUTE_VOUT)
 
+        if len(script_sig) > 500:
+            script_sig = None
+
         new_input = BtcInput(
             id=self.input_id,
             txHash=tx.get(ATTRIBUTE_TXID),
