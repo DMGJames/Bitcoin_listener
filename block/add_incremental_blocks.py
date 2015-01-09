@@ -18,8 +18,11 @@ def set_env():
 set_env()
 ############################
 from sqlalchemy.sql.functions import func
+from sqlalchemy import and_
+from sqlalchemy import desc
+from sqlalchemy.exc import SQLAlchemyError
 import signal
-from common import set_session, get_hostname_or_die
+from common import SignalSystemExit, set_session, get_hostname_or_die
 from bitcoin_client import BitcoinClient
 from constants import DEFAULT_LOCAL_BITCONID_RPC_URL, ATTRIBUTE_ADDED, \
     ATTRIBUTE_REMOVED, ATTRIBUTE_HEIGHT, ATTRIBUTE_HASH, ATTRIBUTE_TIME, \
@@ -41,277 +44,260 @@ def make_lock_file():
 def remove_lock_file():
     os.remove(LOCK_FILE)
 
-class AddIncrementalBlocks:
-    def __init__(self, query_session, update_session, rpc_url):
-        self.query_session = query_session
-        self.update_session = update_session
+class BlockchainUpdater:
+    def __init__(self, session, rpc_url):
+        self.session = session
         self.bitcoin_client = BitcoinClient(rpc_url=rpc_url)
     
         self.caught_term_signal = False
         self.__register_signals__()
 
+        self.block_id = 1
         self.tx_id = 1
         self.input_id = 1
         self.output_id = 1
+
+        self.is_dotting = False
     
     def __register_signals__(self):
         uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
         for i in [x for x in dir(signal) if x.startswith("SIG")]:
             if not i in uncatchable:
                 signum = getattr(signal,i)
-                signal.signal(signum,self.__receive_signal__)
+                signal.signal(signum, self.__receive_signal__)
                 
     def __receive_signal__(self, signum, stack):
         if signum in [1,2,3,15]:
-            print 'Caught signal %s, exiting.' %(str(signum))
-            self.caught_term_signal = True
+            if self.is_dotting is True:
+                stdout.write(" Interrupted by signal %s\n" % str(signum))
+            else:
+                print 'Interrupted by signal %s' % str(signum)
+            self.is_dotting = False
+            raise SignalSystemExit()
         else:
-            print 'Caught signal %s, ignoring.' %(str(signum))
+            pass
 
-    def __check_term_signal__(self):
-        if(self.caught_term_signal):
-            print "Got term signal. Exit."
-            sys.exit()
-        
-    def add_incremental_blocks(self):
-        #1. Get latest block hash
-        block_hash = self.__get_latest_block_hash__()
-        if block_hash is None:
-            print "No block found"
-            block_hash = self.__add_genesis_block__()
+    def run(self):
+        tip = self.__get_blockchain_tip__()
+        if tip is None:
+            print "Blockchain does not exist"
+            tip = self.__initialize_genesis_block__()
+            height = 0
+            hash = tip[ATTRIBUTE_HASH]
         else:
-            print "Latest block hash:", block_hash
-        
-        #2. Process new blocks by calling RPC call getblocksince
-        new_blocks = self.bitcoin_client.getblocksince(block_hash)
-        self.__process_new_blocks__(blocks = new_blocks)
+            height = tip.height
+            hash = tip.hash
 
-    def __get_latest_block_hash__(self):
-        result = None
-        latest_block_id = self.query_session.query(func.max(BtcBlock.id)).first()
-        if latest_block_id:
-            latest_block = self.query_session.query(BtcBlock).filter(BtcBlock.id == latest_block_id[0]).first()
-            if latest_block: result = latest_block.hash 
-        return result
+        print "Blockchain tip {}:{}".format(height, hash)
+        updated_blocks = self.bitcoin_client.getblocksince(hash)
+        self.__process_updated_blocks__(blocks=updated_blocks)
 
-    def __add_genesis_block__(self):
-        genesis_hash = self.bitcoin_client.getblockhash(0)
-        genesis_block = self.bitcoin_client.getblock(genesis_hash)
-        self.__process_added_block__(genesis_block)
-        return genesis_hash
+    def __get_blockchain_tip__(self):
+        tip = self.session.query(BtcBlock).\
+            filter(BtcBlock.is_active == True).\
+            order_by(desc(BtcBlock.height)).\
+            first()
+        return tip
 
-    def __process_new_blocks__(self, blocks):
-        added_blocks = blocks[ATTRIBUTE_ADDED]
-        removed_blocks = blocks[ATTRIBUTE_REMOVED]
-        print "Process removed blocks: ", len(removed_blocks)
-        self.__process_removed_blocks__(removed_blocks = removed_blocks)
-        
-        print "Process added blocks: ", len(added_blocks)
-        self.__process_added_blocks__(added_blocks = added_blocks)
-        
-    def __process_removed_blocks__(self, removed_blocks):
-        if not removed_blocks or len(removed_blocks) == 0: return
-        
-        #1. Get min block id
-        block_ids = [int(block.get(ATTRIBUTE_HEIGHT)) for block in removed_blocks]
-        min_block_id = min(block_ids)
-        
-        #2. Get min TxId
-        min_tx = min_input = min_output = None
-        min_tx_id = self.query_session.query(func.min(BtcTransaction.id)).filter(BtcTransaction.blockID == min_block_id).first()
-        
-        if min_tx_id:
-            min_tx_id = min_tx_id[0]
-            min_tx = self.query_session.query(BtcTransaction).filter(BtcTransaction.id == min_tx_id).first()
-    
-        #print "min_tx:", min_tx.hash
-        #3. Get min inputId
-        if min_tx:
-            min_input = self.query_session.query(BtcInput).filter(BtcInput.txHash == min_tx.hash).first()
-            
-        #4. Get min outputId
-        if min_tx:
-            min_output = self.query_session.query(BtcOutput).filter(BtcOutput.txHash == min_tx.hash).first()
-        
-        #5. Delete blocks
-        # print "min_block_id:", min_block_id
-        self.update_session.query(BtcBlock).filter(BtcBlock.id >= min_block_id).delete()
-        
-        #6. Delete transactions
-        self.update_session.query(BtcTransaction.blockID >= min_block_id).delete()
-        # print "min_block_id:", min_block_id
-        
-        #7. Delete inputs
-        if min_input:
-            self.update_session.query(BtcInput.id >= min_input.id).delete()
-        #print "min_input", min_input.id
-        
-        #8. Delete outputs
-        if min_output:
-            self.update_session.query(BtcOutput.id >= min_output.id).delete()
-        #print "min_output", min_output.id
-        #9. Commit changes
-        try:
-            self.__check_term_signal__()
-            self.update_session.commit()
-            self.__check_term_signal__()
-        except (SystemExit, Exception) as e:
-            print "Exception on __process_removed_blocks__:", e
-            self.update_session.rollback()
-            remove_lock_file()
-        finally:
-            self.update_session.close()
-                
-    def __process_added_blocks__(self, added_blocks):
-        if not added_blocks or len(added_blocks) == 0: return
-        
-        #1. Sort array
-        added_blocks = sorted(added_blocks, key=lambda k: k[ATTRIBUTE_HEIGHT])
-        
-        #2. Get max input/output id
-        max_tx_id = self.query_session.query(func.max(BtcTransaction.id)).first()
-        if max_tx_id[0]: self.tx_id = max_tx_id[0]+1
-        max_input_id = self.query_session.query(func.max(BtcInput.id)).first()
-        if max_input_id[0]: self.input_id = max_input_id[0]+1
-        max_output_id = self.query_session.query(func.max(BtcOutput.id)).first()
-        if max_output_id[0]: self.output_id = max_output_id[0]+1
-        
-        #2. Iterate through blocks
-        for block in added_blocks:
-            self.__process_added_block__(block)
+    def __initialize_genesis_block__(self):
+        hash = self.bitcoin_client.getblockhash(0)
+        block = self.bitcoin_client.getblock(hash)
+        self.__process_active_block__(block)
+        print "Initialized genesis block {}:{}".format(0, hash)
+        return block
 
-    def __process_added_block__(self, block):
-        items = []
-        #1. Add block
+    def __process_updated_blocks__(self, blocks):
+        active_blocks = blocks[ATTRIBUTE_ADDED]
+        orphaned_blocks = blocks[ATTRIBUTE_REMOVED]
+        self.__process_orphaned_blocks__(blocks=orphaned_blocks)
+        self.__process_active_blocks__(blocks=active_blocks)
+        
+    def __process_orphaned_blocks__(self, blocks):
+        print "Processing orphaned blocks...", len(blocks)
+        for block in blocks:
+            try:
+                self.__process_orphaned_block__(block)
+            except:
+                self.__print_block_rollbacked__(block)
+                raise
+
+    def __process_orphaned_block__(self, block):
         height = block.get(ATTRIBUTE_HEIGHT)
         hash = block.get(ATTRIBUTE_HASH)
+        print "Processing orphaned block {}:{}...".format(height, hash)
 
-        print "Processing block {}:{}...".format(height, hash)
+        query = self.session.query(BtcBlock)
+        query.filter(and_(
+            BtcBlock.height == height,
+            BtcBlock.hash == hash))
+
+        if query.all() is None:
+            raise AssertionError("orphaned block not found")
+        if len(query.all()) != 1:
+            raise AssertionError("orphaned block not unique")
+        block = query.first()
+        if block.is_active is False:
+            raise AssertionError("block already orphaned")
+
+        block.is_active = False
+        self.__commit__()
+
+    def __process_active_blocks__(self, blocks):
+        print "Processing active blocks:", len(blocks)
+        self.__prepare_ids__()
+        for block in blocks:
+            try:
+                self.__process_active_block__(block)
+            except:
+                self.__print_block_rollbacked__(block)
+                raise
+
+    def __prepare_ids__(self):
+        max_block_id = self.session.query(func.max(BtcBlock.id)).first()
+        if max_block_id[0] is not None:
+            self.block_id = max_block_id[0] + 1
+
+        max_tx_id = self.session.query(func.max(BtcTransaction.id)).first()
+        if max_tx_id[0] is not None:
+            self.tx_id = max_tx_id[0] + 1
+
+        max_input_id = self.session.query(func.max(BtcInput.id)).first()
+        if max_input_id[0] is not None:
+            self.input_id = max_input_id[0] + 1
+
+        max_output_id = self.session.query(func.max(BtcOutput.id)).first()
+        if max_output_id[0] is not None:
+            self.output_id = max_output_id[0] + 1
+
+    def __process_active_block__(self, block):
+        height = block.get(ATTRIBUTE_HEIGHT)
+        hash = block.get(ATTRIBUTE_HASH)
+        print "Processing active block {}:{}...".format(height, hash)
+
+        btc_block = self.session.query(BtcBlock).\
+            filter(BtcBlock.height == height).\
+            filter(BtcBlock.hash == hash).\
+            first()
+
+        if btc_block is not None:
+            if btc_block.is_active is True:
+                raise AssertionError("block already active")
+            else:
+                btc_block.is_active = True
+                self.__commit__()
+                return
+
+        items = []
         new_block = BtcBlock(
-            id=height,
+            id=self.block_id,
+            height=height,
+            is_active=True,
             hash=hash,
             time=block.get(ATTRIBUTE_TIME),
             pushed_from=get_hostname_or_die())
         items.append(new_block)
 
-        #2. Get transactions from the block
         txs = self.bitcoin_client.getblocktxs(hash)
 
-        #3. Iterate through txs
         for tx in txs:
-            self.__process_transaction__(tx, height, items)
+            self.__process_transaction__(tx, self.block_id, items)
+        self.block_id += 1
 
-        #4. Commit changes
-        self.__commit_items__(items)
+        self.__add_items__(items)
+        self.__commit__()
 
     def __process_transaction__(self, tx, block_id, items):
-        #3.1 Process transaction
         hash = tx.get(ATTRIBUTE_TXID)
         is_coinbase = self.__is_coinbase__(tx)
 
         new_transaction = BtcTransaction(
             id=self.tx_id,
+            block_id=block_id,
             hash=hash,
-            blockID=block_id,
-            is_coinbase=is_coinbase,
-            pushed_from=get_hostname_or_die())
-        self.tx_id += 1
+            is_coinbase=is_coinbase)
         items.append(new_transaction)
 
-        #3.2 Process VIN
         vin = tx.get(ATTRIBUTE_VIN)
         for offset, vin_data in enumerate(vin):
-            self.__process_txin__(vin_data, tx, offset, items)
+            self.__process_txin__(vin_data, self.tx_id, is_coinbase, offset, items)
 
-        #3.3 Process VOUT
         vout = tx.get(ATTRIBUTE_VOUT)
         for offset, vout_data in enumerate(vout):
-            self.__process_txout__(vout_data, tx, offset, items)
+            self.__process_txout__(vout_data, self.tx_id, offset, items)
 
-    def __process_txin__(self, txin, tx, offset, items):
-        if self.__is_coinbase__(tx):
+        self.tx_id += 1
+
+    def __process_txin__(self, txin, tx_id, is_coinbase, offset, items):
+        if is_coinbase:
             script_sig = txin.get(ATTRIBUTE_COINBASE)
-            outputHash = "\0" * 32
-            outputN = -1
+            output_hash = "\0" * 32
+            output_n = -1
         else:
             script_sig = txin.get(ATTRIBUTE_SCRIPT_SIG) \
                              .get(ATTRIBUTE_HEX)
-            outputHash = txin.get(ATTRIBUTE_TXID)
-            outputN = txin.get(ATTRIBUTE_VOUT)
+            output_hash = txin.get(ATTRIBUTE_TXID)
+            output_n = txin.get(ATTRIBUTE_VOUT)
 
         if len(script_sig) > 500:
             script_sig = None
 
         new_input = BtcInput(
             id=self.input_id,
-            txHash=tx.get(ATTRIBUTE_TXID),
-            outputHash=outputHash,
-            outputN=outputN,
+            tx_id=tx_id,
+            output_hash=output_hash,
+            output_n=output_n,
             script_sig=script_sig,
-            offset=offset,
-            pushed_from=get_hostname_or_die())
+            offset=offset)
 
-        self.input_id += 1
         items.append(new_input)
+        self.input_id += 1
 
-    def __process_txout__(self, txout, tx, offset, items):
-        # here we use 'X' to be consistent with previous implementations,
-        # because our table does not support multisig not using P2sh
-        address = 'X'
+    def __process_txout__(self, txout, tx_id, offset, items):
         script_pubkey = txout.get(ATTRIBUTE_SCRIPT_PUB_KEY)
+        if script_pubkey is None:
+            raise AssertionError("scriptPubKey does not exist")
+
         addresses = script_pubkey.get(ATTRIBUTE_ADDRESSES)
-        if script_pubkey and addresses and len(addresses) == 1:
-            address = addresses[0]
+        if addresses is None: return
 
-        new_output = BtcOutput(
-            id=self.output_id,
-            dstAddress=address,
-            value=(int)(txout.get(ATTRIBUTE_VALUE)*100000000),
-            txHash=tx.get(ATTRIBUTE_TXID),
-            offset=offset,
-            pushed_from=get_hostname_or_die())
+        for address in addresses:
+            new_output = BtcOutput(
+                id=self.output_id,
+                tx_id=tx_id,
+                dst_address=address,
+                value=(int)(txout.get(ATTRIBUTE_VALUE)*100000000),
+                offset=offset)
+            items.append(new_output)
+            self.output_id += 1
 
-        self.output_id += 1
-        items.append(new_output)
+    def __add_items__(self, items):
+        statistics = self.__get_statistics__(items)
+        stdout.write("Adding %d items" % len(items))
+        self.is_dotting = True
+        for item in items:
+            stdout.write(".")
+            stdout.flush()
+            self.session.add(item)
+        stdout.write(" Done\n")
+        self.is_dotting = False
+        print "  " \
+              "%(block)i blocks, " \
+              "%(tx)i transactions, " \
+              "%(txin)i inputs, " \
+              "%(txout)i outputs" % statistics
 
-    def __commit_items__(self, items):
-        try:
-            self.__check_term_signal__()
-            statistics = self.__get_statistics__(items)
-            stdout.write("Adding %d items" % len(items))
-            is_dotting = True
-            for item in items:
-                self.__check_term_signal__()
-                stdout.write(".")
-                stdout.flush()
-                self.update_session.add(item)
-            stdout.write(" Done\n")
-            is_dotting = False
-            print "  " \
-                  "%(block)i blocks, " \
-                  "%(tx)i transactions, " \
-                  "%(txin)i inputs, " \
-                  "%(txout)i outputs" % statistics
+    def __commit__(self):
+        stdout.write("Committing...")
+        self.is_dotting = True
+        self.session.commit()
+        stdout.write(" Done\n")
+        self.is_dotting = False
 
-            new_items = []
-            self.__check_term_signal__()
-            stdout.write("Committing...")
-            is_dotting = True
-            self.update_session.commit()
-            stdout.write(" Done\n")
-            is_dotting = False
-            self.__check_term_signal__()
-            return True
-        except (SystemExit, Exception) as e:
-            print >> stderr, "Exception:", e
-            if is_dotting: stdout.write(" Failed\n")
-            stdout.write("Rolling back...")
-            self.update_session.rollback()
-            stdout.write(" Done\n")
-            remove_lock_file()
-            return False
-        finally:
-            self.update_session.close()
+    def __print_block_rollbacked__(self, block):
+        if self.is_dotting is True: stdout.write(" Failed\n")
+        height = block.get(ATTRIBUTE_HEIGHT)
+        hash = block.get(ATTRIBUTE_HASH)
+        print "Rolled back block {}:{}".format(height, hash)
 
     def __is_coinbase__(self, tx):
         vin = tx.get(ATTRIBUTE_VIN)
@@ -329,7 +315,7 @@ class AddIncrementalBlocks:
             elif isinstance(item, BtcOutput):
                 num_txouts += 1
             else:
-                raise "Unknown type"
+                raise AssertionError("unknown item type")
 
         result = {
             "block": num_blocks,
@@ -342,14 +328,30 @@ class AddIncrementalBlocks:
 env_setting = 'local'
 if __name__ == '__main__':
     env_setting = sys.argv[1]
-    print "Environment:" , env_setting
+    print "Environment:", env_setting
     if is_process_running():
-        print "Process is already running, skip this round"
-    else:        
+        print "Process is already running. Skip this round"
+        sys.exit()
+
+    try:
         make_lock_file()
-        query_session = set_session(env_setting=env_setting)
-        update_session = set_session(env_setting=env_setting)
-        adder = AddIncrementalBlocks(query_session=query_session, update_session = update_session, rpc_url = DEFAULT_LOCAL_BITCONID_RPC_URL)
-        adder.add_incremental_blocks()
-        print "Adding incremental blocks completed successfully"
+    except IOError as e:
+        sys.exit("Can't open lock file")
+    except:
+        raise
+
+    try:
+        session = set_session(env_setting=env_setting)
+        updater = BlockchainUpdater(
+            session=session,
+            rpc_url=DEFAULT_LOCAL_BITCONID_RPC_URL)
+        updater.run()
         remove_lock_file()
+        print "Program completed successfully"
+    except SignalSystemExit as e:
+        remove_lock_file()
+        print "Program terminated normally"
+        sys.exit()
+    except:
+        remove_lock_file()
+        raise

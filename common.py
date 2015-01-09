@@ -39,4 +39,7 @@ def get_hostname_or_die():
         unexpected_error()
 
 def unexpected_error():
-    sys.exit("ERROR: %s" % sys.exc_info()[0])
+    sys.exit("UNEXPECTED ERROR: %s" % sys.exc_info()[0])
+
+class SignalSystemExit(SystemExit):
+    pass
