@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.sqltypes import BigInteger
 from sqlalchemy.sql.schema import Index
-
+from sqlalchemy.dialects import mysql
 
 Base = declarative_base()
 
@@ -128,41 +128,43 @@ class TransactionAddressInfoUpdate(Base):
 
 
 class Block(Base):
-    __tablename__   = "block"
-    block_hash      = Column(String(250), index=True, primary_key=True)
-    block_height    = Column(Integer, index=True)
-    is_orphaned     = Column(Boolean, index=True)
-    created_at      = Column(DateTime)
-
-class BtcBlock(Base):
     __tablename__   = "blocks"
-    id              = Column(BigInteger, primary_key=True)
-    height          = Column(BigInteger)
-    is_active       = Column(Boolean)
-    hash            = Column(String(64))
-    time            = Column(BigInteger)
-    pushed_from     = Column(String(25))
+    id              = Column(mysql.BIGINT, primary_key=True)
+    hash            = Column(mysql.BINARY(32))
+    time            = Column(mysql.BIGINT)
+    received_time   = Column(mysql.BIGINT)
+    relayed_by      = Column(mysql.VARBINARY(16))
 
-class BtcTransaction(Base):
+class Transaction(Base):
     __tablename__   = "transactions"
-    id              = Column(BigInteger, primary_key=True)
-    block_id        = Column(BigInteger)
-    hash            = Column(String(64))
-    is_coinbase     = Column(Boolean)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    hash            = Column(mysql.BINARY(32))
+    block_id        = Column(mysql.BIGINT)
+    received_time   = Column(mysql.BIGINT)
+    fee             = Column(mysql.BIGINT)
+    total_out_value = Column(mysql.BIGINT)
+    num_inputs      = Column(mysql.INTEGER)
+    num_outputs     = Column(mysql.INTEGER)
+    coinbase        = Column(mysql.BIT)
+    lock_time       = Column(mysql.BIGINT)
+    relayed_by      = Column(mysql.VARBINARY(16))
 
-class BtcInput(Base):
+class Input(Base):
     __tablename__   = "inputs"
-    id              = Column(BigInteger, primary_key=True)
-    tx_id           = Column(BigInteger)
-    output_hash     = Column(String(64))
-    output_n        = Column(Integer)
-    script_sig      = Column(String(500))
-    offset          = Column(Integer)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    output_id       = Column(mysql.BIGINT)
+    script_type     = Column(mysql.TINYINT(unsigned=True))
+    address_id      = Column(mysql.BIGINT)
+    value           = Column(mysql.BIGINT)
+    tx_id           = Column(mysql.BIGINT)
+    offset          = Column(mysql.INTEGER)
 
-class BtcOutput(Base):
+class Output(Base):
     __tablename__   = "outputs"
-    id              = Column(BigInteger, primary_key=True)
-    tx_id           = Column(BigInteger)
-    dst_address     = Column(String(36))
-    value           = Column(BigInteger)
-    offset          = Column(Integer)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    script_type     = Column(mysql.TINYINT(unsigned=True))
+    address_id      = Column(mysql.BIGINT)
+    value           = Column(mysql.BIGINT)
+    tx_id           = Column(mysql.BIGINT)
+    offset          = Column(mysql.INTEGER)
+    spent           = Column(mysql.BIT)
