@@ -178,3 +178,9 @@ class Address(Base):
     num_txns        = Column(mysql.BIGINT)
     total_received  = Column(mysql.BIGINT)
     final_balance   = Column(mysql.BIGINT)
+
+class OutputsAddress(Base):
+    __tablename__   = "outputs_addresses"
+    output_id       = Column(mysql.BIGINT, primary_key=True)
+    address_id      = Column(mysql.BIGINT, primary_key=True)
+    count           = Column(mysql.INTEGER, primary_key=True)
