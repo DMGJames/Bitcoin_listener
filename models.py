@@ -168,3 +168,13 @@ class Output(Base):
     tx_id           = Column(mysql.BIGINT)
     offset          = Column(mysql.INTEGER)
     spent           = Column(mysql.BIT)
+
+class Address(Base):
+    __tablename__   = "addresses"
+    id              = Column(mysql.BIGINT, primary_key=True)
+    address         = Column(mysql.CHAR(36))
+    first_time      = Column(mysql.BIGINT)
+    last_time       = Column(mysql.BIGINT)
+    num_txns        = Column(mysql.BIGINT)
+    total_received  = Column(mysql.BIGINT)
+    final_balance   = Column(mysql.BIGINT)
