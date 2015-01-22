@@ -14,3 +14,4 @@ python-jsonrpc==0.4.0
 redis==2.10.1
 threadpool==1.2.7
 wsgiref==0.1.2
+enum34==1.0.4
