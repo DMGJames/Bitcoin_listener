@@ -8,6 +8,7 @@ import sys
 import ConfigParser
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
+import time, calendar
 
 def set_session(env_setting='local'):    
     # 2. Load db config
@@ -43,3 +44,6 @@ def unexpected_error():
 
 class SignalSystemExit(SystemExit):
     pass
+
+def get_epoch_time():
+    return calendar.timegm(time.gmtime())
