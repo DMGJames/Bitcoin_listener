@@ -23,10 +23,9 @@ def set_session(env_setting='local'):
     
     # 4. Configure SQLAlchemy session
     engine = create_engine(db_engine)
-    session_maker = sessionmaker()
-    session_maker.configure(bind=engine)
-    session = session_maker()
-    return session
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    return Session()
 
 def get_hostname_or_die():
     try:
