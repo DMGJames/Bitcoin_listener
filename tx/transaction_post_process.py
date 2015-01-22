@@ -18,7 +18,7 @@ set_env()
 
 ########################################################################
 from common import set_session
-from models import Transaction
+from models import RawTransaction
 import json
 from constants import ATTRIBUTE_BLOCK_HEIGHT, ATTRIBUTE_TXID,\
     ATTRIBUTE_BLOCKHASH, ATTRIBUTE_HEIGHT, DEFAULT_BITCOIND_RPC_URL,\
@@ -91,7 +91,7 @@ class TransactionPostProcess():
         try:
             for tx in transactions:
                 if tx.get(ATTRIBUTE_BLOCK_HEIGHT):
-                    self.update_session.query(Transaction).filter(Transaction.txid == tx.get(ATTRIBUTE_TXID)).\
+                    self.update_session.query(RawTransaction).filter(RawTransaction.txid == tx.get(ATTRIBUTE_TXID)).\
                         update({ATTRIBUTE_BLOCK_HEIGHT:tx.get(ATTRIBUTE_BLOCK_HEIGHT),
                                 ATTRIBUTE_BLOCK_HASH:tx.get(ATTRIBUTE_BLOCK_HASH)})
             self.update_session.commit()
@@ -101,7 +101,7 @@ class TransactionPostProcess():
     def run_post_process(self):
         print "run post process"
         #1. Get all transactions
-        txs = self.query_session.query(Transaction).filter(Transaction.block_hash == None).all()
+        txs = self.query_session.query(RawTransaction).filter(RawTransaction.block_hash == None).all()
         for tx in txs:
             while self.pool._requests_queue.qsize() > len(self.pool.workers) :
                 self.pool.wait()

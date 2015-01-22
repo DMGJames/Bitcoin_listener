@@ -49,7 +49,7 @@ class NodeActivity(Base):
     pushed_from     = Column(String(25), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
 
-class Transaction(Base):
+class RawTransaction(Base):
     __tablename__   = 'transaction'
     txid            = Column(String(250),primary_key=True, index=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
@@ -66,7 +66,7 @@ class Transaction(Base):
     def print_pushing_message(self):
         print "Pushed transaction:", self.txid
 
-class TransactionInfo(Base):
+class RawTransactionInfo(Base):
     __tablename__   = "transaction_info"
     #id              = Column(Integer, primary_key=True)
     txid            = Column(String(250), primary_key=True, index=True)
