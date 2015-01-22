@@ -8,7 +8,7 @@ There are 6 components:
 1. NodePusher - read node data from redis and push it to RDS. Listener dependency.
 1. TransactionPusher - read transaction data from redis and put it to RDS. Listener dependency. 
 1. NodePinger - find all nodes from RDS with non-NULL user_agent fields and ping those nodes constantly to see if they are active. We should put this component in a dedicated instance to avoid being backlisted. (Meaning no bitcoind or other scripts running)
-1. AddIncrementalBlocks - update blockchain since the last block found in the database
+1. mainchain_update - update blockchain since the last block found in the database
 1. TransactionPostProcess - update block information for transaction data pushed by TransactionPusher. The block information could be missing because those pushed transactions are raw transactions. They might have not been packed in blocks while being pushed.  
 
 ---
@@ -287,15 +287,15 @@ The activities of nodes being pinged are pushed to table *node_activity*.
 
 ---
 
-## AddIncrementalBlocks
+## mainchain_update
 
 ### Add to crontab
 
 For example, add the following in crontab:
 
-`*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/add_incremental_blocks.py prod `
+`*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/mainchain_update.py prod `
 
-Run it manually: `python add_incremental_blocks.py prod`
+Run it manually: `python mainchain_update.py prod`
 
 ### Results
 
