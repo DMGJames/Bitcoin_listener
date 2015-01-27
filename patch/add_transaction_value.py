@@ -16,7 +16,7 @@ set_env()
 
 ######################################################################## 
 from common import set_session
-from models import Transaction, TransactionInfo
+from models import RawTransaction, RawTransactionInfo
 import json
 from constants import ATTRIBUTE_VOUT, ATTRIBUTE_JSON_STRING, ATTRIBUTE_VALUE,\
     ATTRIBUTE_TXID
@@ -32,11 +32,11 @@ class AddValuePatch():
         limit = 200
         offset = 0
         while True:
-            txs = self.query_session.query(Transaction.txid).filter(Transaction.value == None).order_by(Transaction.txid).offset(offset).limit(limit)
+            txs = self.query_session.query(RawTransaction.txid).filter(RawTransaction.value == None).order_by(RawTransaction.txid).offset(offset).limit(limit)
             txids = [tx.txid for tx in txs]
             if len(txids) == 0: break
             print "limit:offset", limit, offset
-            tx_infos = self.query_session.query(TransactionInfo).filter(TransactionInfo.txid.in_(txids))
+            tx_infos = self.query_session.query(RawTransactionInfo).filter(RawTransactionInfo.txid.in_(txids))
             tx_info_dicts = [tx_info.__dict__ for tx_info in tx_infos]
             update_count = 0
             for tx_info_dict in tx_info_dicts:
@@ -50,8 +50,8 @@ class AddValuePatch():
                             print "plus:",vout.get(ATTRIBUTE_VALUE, 0)
                             value = value + vout.get(ATTRIBUTE_VALUE, 0)
                         print "value:", value
-                        self.update_session.query(Transaction).filter(Transaction.txid == tx_info_dict.get(ATTRIBUTE_TXID)).update(
-                                   {Transaction.value:value})
+                        self.update_session.query(RawTransaction).filter(RawTransaction.txid == tx_info_dict.get(ATTRIBUTE_TXID)).update(
+                                   {RawTransaction.value:value})
                         update_count = update_count + 1
                     except Exception, e:
                         print "Exception (ignored):",e

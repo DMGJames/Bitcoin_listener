@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.sqltypes import BigInteger
 from sqlalchemy.sql.schema import Index
-
+from sqlalchemy.dialects import mysql
 
 Base = declarative_base()
 
@@ -49,7 +49,7 @@ class NodeActivity(Base):
     pushed_from     = Column(String(25), index=True)
     created_at      = Column(DateTime, default=func.now(),index=True)
 
-class Transaction(Base):
+class RawTransaction(Base):
     __tablename__   = 'transaction'
     txid            = Column(String(250),primary_key=True, index=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
@@ -66,7 +66,7 @@ class Transaction(Base):
     def print_pushing_message(self):
         print "Pushed transaction:", self.txid
 
-class TransactionInfo(Base):
+class RawTransactionInfo(Base):
     __tablename__   = "transaction_info"
     #id              = Column(Integer, primary_key=True)
     txid            = Column(String(250), primary_key=True, index=True)
@@ -88,7 +88,6 @@ class TransactionOutput(Base):
     block_height    = Column(Integer, index=True)
     value           = Column(Numeric(precision=15, scale=8), index=True)
     is_from_coinbase= Column(Boolean, index=True)
-    pushed_from     = Column(String(25), index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction vout:", self.txid, self.offset, self.address
@@ -103,7 +102,6 @@ class TransactionInput(Base):
     block_height    = Column(Integer, index=True)
     output_txid     = Column(String(250), index=True) #TransactionOutput txid
     vout_offset     = Column(Integer, index=True) #TransactionOuput offset
-    pushed_from     = Column(String(25), index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction vin:", self.txid, self.offset, self.output_txid, self.vout_offset
@@ -119,7 +117,6 @@ class TransactionAddressInfo(Base):
     vin_count       = Column(Integer, index=True)
     vout_count      = Column(Integer, index=True)
     coinbase        = Column(Integer, index=True, default=0)
-    pushed_from     = Column(String(25), index=True)
 
     def print_pushing_message(self):
         print "Pushed transaction address info:", self.address
@@ -127,50 +124,63 @@ class TransactionAddressInfo(Base):
 class TransactionAddressInfoUpdate(Base):
     __tablename__   = "transaction_address_info_update"
     block_height    = Column(Integer, primary_key=True, index=True)
-    pushed_from     = Column(String(25), index=True)
     updated_at      = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class Block(Base):
-    __tablename__   = "block"
-    block_hash      = Column(String(250), index=True, primary_key=True)
-    block_height    = Column(Integer, index=True)
-    is_orphaned     = Column(Boolean, index=True)
-    pushed_from     = Column(String(25), index=True)
-    created_at      = Column(DateTime)
-
-class BtcBlock(Base):
     __tablename__   = "blocks"
-    id              = Column(BigInteger, primary_key=True)
-    hash            = Column(String(64))
-    time            = Column(BigInteger)
-    pushed_from     = Column(String(25), index=True)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    hash            = Column(mysql.BINARY(32))
+    time            = Column(mysql.BIGINT)
+    received_time   = Column(mysql.BIGINT)
+    relayed_by      = Column(mysql.VARBINARY(16))
 
-class BtcTransaction(Base):
+class Transaction(Base):
     __tablename__   = "transactions"
-    id              = Column(BigInteger, primary_key=True)
-    hash            = Column(String(64))
-    blockID         = Column(BigInteger)
-    is_coinbase     = Column(Boolean, index=True)
-    pushed_from     = Column(String(25), index=True)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    hash            = Column(mysql.BINARY(32))
+    block_id        = Column(mysql.BIGINT)
+    received_time   = Column(mysql.BIGINT)
+    fee             = Column(mysql.BIGINT)
+    total_out_value = Column(mysql.BIGINT)
+    num_inputs      = Column(mysql.INTEGER)
+    num_outputs     = Column(mysql.INTEGER)
+    coinbase        = Column(mysql.BIT)
+    lock_time       = Column(mysql.BIGINT)
+    relayed_by      = Column(mysql.VARBINARY(16))
 
-class BtcInput(Base):
+class Input(Base):
     __tablename__   = "inputs"
-    id              = Column(BigInteger, primary_key=True)
-    txHash          = Column(String(64))
-    outputHash      = Column(String(64))
-    outputN         = Column(Integer)
-    script_sig      = Column(String(500))
-    offset          = Column(Integer)
-    pushed_from     = Column(String(25), index=True)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    output_id       = Column(mysql.BIGINT)
+    script_type     = Column(mysql.TINYINT(unsigned=True))
+    address_id      = Column(mysql.BIGINT)
+    value           = Column(mysql.BIGINT)
+    tx_id           = Column(mysql.BIGINT)
+    offset          = Column(mysql.INTEGER)
 
-class BtcOutput(Base):
+class Output(Base):
     __tablename__   = "outputs"
-    id              = Column(BigInteger, primary_key=True)
-    dstAddress      = Column(String(36))
-    value           = Column(BigInteger)
-    txHash          = Column(String(64))
-    offset          = Column(Integer)
-    pushed_from     = Column(String(25), index=True)
-    
-Index('txHash_2', BtcOutput.txHash, BtcOutput.offset)
+    id              = Column(mysql.BIGINT, primary_key=True)
+    script_type     = Column(mysql.TINYINT(unsigned=True))
+    address_id      = Column(mysql.BIGINT)
+    value           = Column(mysql.BIGINT)
+    tx_id           = Column(mysql.BIGINT)
+    offset          = Column(mysql.INTEGER)
+    spent           = Column(mysql.BIT)
+
+class Address(Base):
+    __tablename__   = "addresses"
+    id              = Column(mysql.BIGINT, primary_key=True)
+    address         = Column(mysql.CHAR(36))
+    first_time      = Column(mysql.BIGINT)
+    last_time       = Column(mysql.BIGINT)
+    num_txns        = Column(mysql.BIGINT)
+    total_received  = Column(mysql.BIGINT)
+    final_balance   = Column(mysql.BIGINT)
+
+class OutputsAddress(Base):
+    __tablename__   = "outputs_addresses"
+    output_id       = Column(mysql.BIGINT, primary_key=True)
+    address_id      = Column(mysql.BIGINT, primary_key=True)
+    count           = Column(mysql.INTEGER, primary_key=True)

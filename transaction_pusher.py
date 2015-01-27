@@ -16,7 +16,7 @@ from constants import DEFAULT_MAI_REDIS_PASSWORD, DEFAULT_TX_QUEUE, DEFAULT_TX_C
     ATTRIBUTE_PUBKEY, ATTRIBUTE_PUBKEYHASH, ATTRIBUTE_SCRIPTHASH, \
     ATTRIBUTE_HAS_MULTISIG, ATTRIBUTE_HAS_NULLDATA, ATTRIBUTE_HAS_PUBKEY, \
     ATTRIBUTE_HAS_SCRIPTHASH, ATTRIBUTE_HAS_PUBKEYHASH, DEFAULT_TXN_POOL_SIZE
-from models import Transaction, TransactionInfo
+from models import RawTransaction, RawTransactionInfo
 from pusher import Pusher
 
 class TransactionPusher(Pusher):
@@ -42,7 +42,7 @@ class TransactionPusher(Pusher):
             result = []
             for json_tx in json_txs:
                 dict_tx = self.__json_tx_to_dict_tx__(json_tx)
-                tx = Transaction(txid=dict_tx.get(ATTRIBUTE_TXID),
+                tx = RawTransaction(txid=dict_tx.get(ATTRIBUTE_TXID),
                                  value=dict_tx.get(ATTRIBUTE_VALUE),
                                  has_multisig=dict_tx.get(ATTRIBUTE_HAS_MULTISIG),
                                  has_nulldata=dict_tx.get(ATTRIBUTE_HAS_NULLDATA),
@@ -51,7 +51,7 @@ class TransactionPusher(Pusher):
                                  has_scripthash=dict_tx.get(ATTRIBUTE_HAS_SCRIPTHASH),
                                  pushed_from=get_hostname_or_die())
                 result.append(tx)
-                tx_info = TransactionInfo(txid=dict_tx.get(ATTRIBUTE_TXID),
+                tx_info = RawTransactionInfo(txid=dict_tx.get(ATTRIBUTE_TXID),
                                           relayed_from=dict_tx.get(ATTRIBUTE_RELAYED_FROM),
                                           received_at=dict_tx.get(ATTRIBUTE_RECEIVED_AT),
                                           json_string=json_tx,

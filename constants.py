@@ -120,3 +120,5 @@ DEFAULT_BITCOIND_RPC_URL        = "http://bitcoinrpc:teammaicoin@172.31.28.93:83
 DEFAULT_LOCAL_BITCONID_RPC_URL  = "http://bitcoinrpc:teammaicoin@127.0.0.1:8332"
 
 DEFAULT_TX_ADDRESS_POOL_SIZE    = 1#200
+
+SATOSHI_PER_BTC = 100000000

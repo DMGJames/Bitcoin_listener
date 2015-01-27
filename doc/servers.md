@@ -4,8 +4,8 @@
 2. node_pusher_daemon_runner.py
 3. transaction_pusher_daemon_runner.py
 4. node_pinger_daemon_runner.py
-5. add_incremental_blocks.py
-6. tx_post_process.log
+5. mainchain_update.py
+6. tx_post_process.py
 
 ### Server List
 

@@ -8,6 +8,7 @@ import sys
 import ConfigParser
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
+import time, calendar
 
 def set_session(env_setting='local'):    
     # 2. Load db config
@@ -22,10 +23,9 @@ def set_session(env_setting='local'):
     
     # 4. Configure SQLAlchemy session
     engine = create_engine(db_engine)
-    session_maker = sessionmaker()
-    session_maker.configure(bind=engine)
-    session = session_maker()
-    return session
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    return Session()
 
 def get_hostname_or_die():
     try:
@@ -39,4 +39,10 @@ def get_hostname_or_die():
         unexpected_error()
 
 def unexpected_error():
-    sys.exit("ERROR: %s" % sys.exc_info()[0])
+    sys.exit("UNEXPECTED ERROR: %s" % sys.exc_info()[0])
+
+class SignalSystemExit(SystemExit):
+    pass
+
+def get_epoch_time():
+    return calendar.timegm(time.gmtime())

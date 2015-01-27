@@ -363,7 +363,7 @@ crontab -e
 ```
 0 18 * * 1 cd /home/mcdeploy/listener_pusher/current/geoip/ && ./update.sh
 */10 * * * * cd /home/mcdeploy/listener_pusher/current && tx/transaction_post_process.py  prod >> /home/mcdeploy/listener_pusher/current/tx_post_process.log
-*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/add_incremental_blocks.py  prod >> /home/mcdeploy/listener_pusher/current/add_incremental_blocks.log
+*/10 * * * * cd /home/mcdeploy/listener_pusher/current && block/mainchain_update.py  prod >> /home/mcdeploy/listener_pusher/current/mainchain_update.log
 ```
 
 ### Cron jobs not running for now
@@ -411,10 +411,10 @@ Remote:
 	
 	
 
-### Add incremnetal blocks
+### Update main chain
 Local:
-`block/add_incremental_blocks.py local`
+`block/mainchain_update.py local`
 
 Prod:
-`block/add_incremental_blocks.py prod`
+`block/mainchain_update.py prod`
 
