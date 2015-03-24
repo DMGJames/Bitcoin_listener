@@ -240,7 +240,7 @@ class MainchainUpdater(object):
             if tx.is_coinbase():
                 output_id = -1
                 type=255
-                address_id = -1
+                address_id = -2
                 value = 0
             else:
                 m_output = self.session.select_output(
@@ -254,7 +254,7 @@ class MainchainUpdater(object):
                 address_id = m_output.address_id
                 value = m_output.value
 
-                if address_id != -1:
+                if address_id > 0:
                     m_address = self.session.select_address(id=address_id)
                     assert m_address is not None
                     m_address.final_balance -= value
@@ -385,7 +385,7 @@ class MainchainUpdater(object):
         assert m_inputs
 
         for m_input in m_inputs:
-            if m_input.address_id != -1:
+            if m_input.address_id > 0:
                 m_prevout = self.session.select_output(id=m_input.output_id)
                 assert m_prevout is not None
                 m_address = self.session.select_address(id=m_input.address_id)
@@ -418,7 +418,7 @@ class MainchainUpdater(object):
                     for m_output_address in m_outputs_addresses:
                         m_outputs_addresses_to_delete.append(m_output_address)
                 else:
-                    assert m_output.address_id != -1
+                    assert m_output.address_id > 0
                     address_ids = [m_output.address_id]
 
                 for address_id in address_ids:
