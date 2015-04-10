@@ -98,7 +98,7 @@ class Transaction(object):
         if self.is_coinbase():
             return 0
         else:
-            return self.get_value_out() - self.get_value_in()
+            return self.get_value_in() - self.get_value_out()
 
 
 class BlockHeader(object):
