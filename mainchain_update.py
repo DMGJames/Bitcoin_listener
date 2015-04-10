@@ -285,41 +285,42 @@ class MainchainUpdater(object):
                 address_id = -1
             else:
                 addresses = txout.script_pubkey.addresses
-                assert isinstance(addresses, list)
+                assert type == TxnoutType.TX_MULTISIG or isinstance(addresses, list)
 
-                for address in addresses:
-                    first_seen_in_tx = address not in tx_addresses
-                    tx_addresses.add(address)
+                if isinstance(addresses, list):
+                    for address in addresses:
+                        first_seen_in_tx = address not in tx_addresses
+                        tx_addresses.add(address)
 
-                    m_address = self.session.select_address(address=address)
-                    if m_address is None:
-                        m_address = MAddress(
-                            id=self.current_address_id,
-                            address=address,
-                            first_time=time,
-                            last_time=0,
-                            num_txns=0,
-                            total_received=0,
-                            final_balance=0)
+                        m_address = self.session.select_address(address=address)
+                        if m_address is None:
+                            m_address = MAddress(
+                                id=self.current_address_id,
+                                address=address,
+                                first_time=time,
+                                last_time=0,
+                                num_txns=0,
+                                total_received=0,
+                                final_balance=0)
 
-                        self.session.add(m_address)
-                        self.item_stats.num_addresses += 1
-                        self.current_address_id += 1
+                            self.session.add(m_address)
+                            self.item_stats.num_addresses += 1
+                            self.current_address_id += 1
 
-                    m_address.last_time = time,
-                    if first_seen_in_tx is True:
-                        m_address.num_txns += 1
+                        m_address.last_time = time,
+                        if first_seen_in_tx is True:
+                            m_address.num_txns += 1
 
-                    if type == TxnoutType.TX_MULTISIG:
-                        if m_address.id not in address_counts:
-                            address_counts[m_address.id] = 1
+                        if type == TxnoutType.TX_MULTISIG:
+                            if m_address.id not in address_counts:
+                                address_counts[m_address.id] = 1
+                            else:
+                                address_counts[m_address.id] += 1
                         else:
-                            address_counts[m_address.id] += 1
-                    else:
-                        m_address.total_received += txout.value
-                        m_address.final_balance += txout.value
+                            m_address.total_received += txout.value
+                            m_address.final_balance += txout.value
 
-                    address_id = m_address.id
+                        address_id = m_address.id
 
                 if type == TxnoutType.TX_MULTISIG:
                     address_id = -1
