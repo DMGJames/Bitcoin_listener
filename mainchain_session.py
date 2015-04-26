@@ -19,7 +19,7 @@ class MainchainMixin(object):
                 first()
         if "hash" in kwargs:
             return self.session.query(Block).\
-                filter(Block.hash == func.unhex(kwargs["hash"])). \
+                filter(Block.hsh == func.unhex(kwargs["hash"])). \
                 first()
 
     def select_blocks(self, **kwargs):
@@ -52,7 +52,7 @@ class MainchainMixin(object):
                 first()
         if "hash" in kwargs:
             return self.session.query(Transaction).\
-                filter(Transaction.hash == func.unhex(kwargs["hash"])). \
+                filter(Transaction.hsh == func.unhex(kwargs["hash"])). \
                 first()
 
     def select_transactions(self, **kwargs):
@@ -91,7 +91,7 @@ class MainchainMixin(object):
         else:
             return self.session.query(Output). \
                 join(Transaction, Output.tx_id == Transaction.id). \
-                filter(Transaction.hash == func.unhex(kwargs["hash"])). \
+                filter(Transaction.hsh == func.unhex(kwargs["hash"])). \
                 filter(Output.offset == kwargs["offset"]). \
                 first()
 

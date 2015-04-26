@@ -130,7 +130,7 @@ class TransactionAddressInfoUpdate(Base):
 class Block(Base):
     __tablename__   = "blocks"
     id              = Column(mysql.BIGINT, primary_key=True)
-    hash            = Column(mysql.BINARY(32))
+    hsh             = Column(mysql.BINARY(32))
     time            = Column(mysql.BIGINT)
     received_time   = Column(mysql.BIGINT)
     relayed_by      = Column(mysql.VARBINARY(16))
@@ -138,7 +138,7 @@ class Block(Base):
 class Transaction(Base):
     __tablename__   = "transactions"
     id              = Column(mysql.BIGINT, primary_key=True)
-    hash            = Column(mysql.BINARY(32))
+    hsh             = Column(mysql.BINARY(32))
     block_id        = Column(mysql.BIGINT)
     received_time   = Column(mysql.BIGINT)
     fee             = Column(mysql.BIGINT)
