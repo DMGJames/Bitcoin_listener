@@ -113,7 +113,7 @@ class MainchainUpdater(object):
             print "Main chain does not exist"
             hash = self.__insert_genesis_block__()
         else:
-            hash = binascii.b2a_hex(tip.hash)
+            hash = binascii.b2a_hex(tip.hsh)
             print "Main chain tip {}:{}".format(tip.id, hash)
 
         try:
@@ -197,7 +197,7 @@ class MainchainUpdater(object):
             received_time = get_epoch_time()
             m_block = MBlock(
                 id=block.height,
-                hash=binascii.a2b_hex(block.hash),
+                hsh=binascii.a2b_hex(block.hash),
                 time=block.time,
                 received_time=received_time)
             self.session.add(m_block)
@@ -219,7 +219,7 @@ class MainchainUpdater(object):
 
             m_tx = MTransaction(
                 id=self.current_tx_id,
-                hash=binascii.a2b_hex(tx.hash),
+                hsh=binascii.a2b_hex(tx.hash),
                 block_id=block.height,
                 received_time=received_time,
                 fee=tx.get_fee(),
