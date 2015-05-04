@@ -160,19 +160,21 @@ class Input(Base):
     offset          = Column(mysql.INTEGER)
 
 class Output(Base):
-    __tablename__   = "outputs"
-    id              = Column(mysql.BIGINT, primary_key=True)
-    script_type     = Column(mysql.TINYINT(unsigned=True))
-    address_id      = Column(mysql.BIGINT)
-    value           = Column(mysql.BIGINT)
-    tx_id           = Column(mysql.BIGINT)
-    offset          = Column(mysql.INTEGER)
-    spent           = Column(mysql.BIT)
+    __tablename__      = "outputs"
+    id                 = Column(mysql.BIGINT, primary_key=True)
+    script_type        = Column(mysql.TINYINT(unsigned=True))
+    address_id         = Column(mysql.BIGINT)
+    address_first_used = Column(mysql.BIT)
+    value              = Column(mysql.BIGINT)
+    tx_id              = Column(mysql.BIGINT)
+    offset             = Column(mysql.INTEGER)
+    spent              = Column(mysql.BIT)
 
 class Address(Base):
     __tablename__   = "addresses"
     id              = Column(mysql.BIGINT, primary_key=True)
     address         = Column(mysql.CHAR(36))
+    first_tx_id     = Column(mysql.BIGINT)
     first_time      = Column(mysql.BIGINT)
     last_time       = Column(mysql.BIGINT)
     num_txns        = Column(mysql.BIGINT)
