@@ -285,6 +285,9 @@ class MainchainUpdater(object):
                 address_id = -1
             else:
                 addresses = txout.script_pubkey.addresses
+                # It is possible for a mutlisig tx to not have address list.
+                # Take tx da921e34ee8cc15e8daca3cc413c951c3da66f49015bd577ca4db4625d5a4d53 for example,
+                # the second output is multisig but it's purpose is to store data
                 assert type == TxnoutType.TX_MULTISIG or isinstance(addresses, list)
 
                 if isinstance(addresses, list):
