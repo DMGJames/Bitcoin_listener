@@ -278,6 +278,7 @@ class MainchainUpdater(object):
 
         for offset, txout in enumerate(tx.vout):
             address_counts = {}
+            address_first_used = False
             type = txout.script_pubkey.type
 
             if type == TxnoutType.TX_NONSTANDARD or \
@@ -341,10 +342,14 @@ class MainchainUpdater(object):
                 id=self.current_output_id,
                 script_type=type.value,
                 address_id=address_id,
+                address_first_used=False,
                 value=txout.value,
                 tx_id=tx_id,
                 offset=offset,
                 spent=False)
+
+            if address_id != -1:
+                m_output.address_first_used = address_first_used
 
             self.session.add(m_output)
             self.item_stats.num_outputs += 1
