@@ -300,6 +300,7 @@ class MainchainUpdater(object):
                             m_address = MAddress(
                                 id=self.current_address_id,
                                 address=address,
+                                first_tx_id=tx_id,
                                 first_time=time,
                                 last_time=0,
                                 num_txns=0,
