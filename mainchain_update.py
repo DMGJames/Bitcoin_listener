@@ -277,7 +277,7 @@ class MainchainUpdater(object):
         tx_addresses = set()
 
         for offset, txout in enumerate(tx.vout):
-            address_counts = {}
+            multisig_address_counts = {}
             address_first_used = False
             type = txout.script_pubkey.type
 
@@ -317,10 +317,10 @@ class MainchainUpdater(object):
                             m_address.num_txns += 1
 
                         if type == TxnoutType.TX_MULTISIG:
-                            if m_address.id not in address_counts:
-                                address_counts[m_address.id] = 1
+                            if m_address.id not in multisig_address_counts:
+                                multisig_address_counts[m_address.id] = 1
                             else:
-                                address_counts[m_address.id] += 1
+                                multisig_address_counts[m_address.id] += 1
                         else:
                             m_address.total_received += txout.value
                             m_address.final_balance += txout.value
@@ -330,7 +330,7 @@ class MainchainUpdater(object):
                 if type == TxnoutType.TX_MULTISIG:
                     address_id = -1
 
-            for id, count in address_counts.iteritems():
+            for id, count in multisig_address_counts.iteritems():
                 m_outputs_address = MOutputsAddress(
                     output_id=self.current_output_id,
                     address_id=id,
