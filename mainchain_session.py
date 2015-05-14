@@ -24,7 +24,8 @@ class MainchainMixin(object):
 
     def select_blocks(self, **kwargs):
         assert len(kwargs) == 1 and \
-               "address" in kwargs
+               ("address" in kwargs or
+                "address_id" in kwargs)
         if "address" in kwargs:
             p = self.session.query(Block). \
                 select_from(Address). \
@@ -39,6 +40,22 @@ class MainchainMixin(object):
                 join(Transaction, Output.tx_id == Transaction.id). \
                 join(Block, Transaction.block_id == Block.id). \
                 filter(Address.address == kwargs["address"])
+            q = p.union_all(q).distinct().order_by(Block.id)
+            return q.all()
+        if "address_id" in kwargs:
+            p = self.session.query(Block). \
+                select_from(Address). \
+                join(Output, Address.id == Output.address_id). \
+                join(Transaction, Output.tx_id == Transaction.id). \
+                join(Block, Transaction.block_id == Block.id). \
+                filter(Address.id == kwargs["address_id"])
+            q = self.session.query(Block). \
+                select_from(Address). \
+                join(OutputsAddress, Address.id == OutputsAddress.address_id). \
+                join(Output, OutputsAddress.output_id == Output.id). \
+                join(Transaction, Output.tx_id == Transaction.id). \
+                join(Block, Transaction.block_id == Block.id). \
+                filter(Address.id == kwargs["address_id"])
             q = p.union_all(q).distinct().order_by(Block.id)
             return q.all()
 
@@ -117,6 +134,34 @@ class MainchainMixin(object):
             return self.session.query(Address). \
                 filter(Address.address == kwargs["address"]). \
                 first()
+
+    def select_addresses(self, **kwargs):
+        assert len(kwargs) == 1 and ( \
+               "output_id" in kwargs or \
+               "input_id" in kwargs)
+        if "output_id" in kwargs:
+            p = self.session.query(Address). \
+                join(Output, Address.id == Output.address_id). \
+                filter(Output.id == kwargs["output_id"])
+            q = self.session.query(Address). \
+                join(OutputsAddress, Address.id == OutputsAddress.address_id). \
+                join(Output, OutputsAddress.output_id == Output.id). \
+                filter(Output.id == kwargs["output_id"])
+            q = p.union_all(q).distinct().order_by(Address.id)
+            return q.all()
+
+        if "input_id" in kwargs:
+            p = self.session.query(Address). \
+                join(Output, Address.id == Output.address_id). \
+                join(Input, Output.id == Input.output_id). \
+                filter(Input.id == kwargs["input_id"])
+            q = self.session.query(Address). \
+                join(OutputsAddress, Address.id == OutputsAddress.address_id). \
+                join(Output, OutputsAddress.output_id == Output.id). \
+                join(Input, Output.id == Input.output_id). \
+                filter(Input.id == kwargs["input_id"])
+            q = p.union_all(q).distinct().order_by(Address.id)
+            return q.all()
 
     def select_outputs_addresses(self, **kwargs):
         assert len(kwargs) == 1 and \

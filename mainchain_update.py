@@ -231,11 +231,12 @@ class MainchainUpdater(object):
             self.session.add(m_tx)
             self.item_stats.num_transactions += 1
 
-            self.__insert_vin__(tx, self.current_tx_id)
-            self.__insert_vout__(tx, self.current_tx_id, block.time)
+            tx_addresses = set()
+            self.__insert_vin__(tx, self.current_tx_id, tx_addresses)
+            self.__insert_vout__(tx, self.current_tx_id, block.time, tx_addresses)
             self.current_tx_id += 1
 
-    def __insert_vin__(self, tx, tx_id):
+    def __insert_vin__(self, tx, tx_id, tx_addresses):
         for offset, txin in enumerate(tx.vin):
             if tx.is_coinbase():
                 output_id = -1
@@ -260,6 +261,12 @@ class MainchainUpdater(object):
                     m_address.final_balance -= value
                     assert m_address.final_balance >= 0
 
+                m_addresses = self.session.select_addresses(output_id=output_id)
+                for m_address in m_addresses:
+                    if m_address.address not in tx_addresses:
+                        m_address.num_txns += 1
+                        tx_addresses.add(m_address.address)
+
             m_input = MInput(
                 id=self.current_input_id,
                 output_id=output_id,
@@ -273,9 +280,7 @@ class MainchainUpdater(object):
             self.item_stats.num_inputs += 1
             self.current_input_id += 1
 
-    def __insert_vout__(self, tx, tx_id, time):
-        tx_addresses = set()
-
+    def __insert_vout__(self, tx, tx_id, time, tx_addresses):
         for offset, txout in enumerate(tx.vout):
             multisig_address_counts = {}
             address_first_used = False
@@ -293,9 +298,6 @@ class MainchainUpdater(object):
 
                 if isinstance(addresses, list):
                     for address in addresses:
-                        first_seen_in_tx = address not in tx_addresses
-                        tx_addresses.add(address)
-
                         m_address = self.session.select_address(address=address)
                         if m_address is None:
                             m_address = MAddress(
@@ -313,8 +315,9 @@ class MainchainUpdater(object):
                             self.current_address_id += 1
 
                         m_address.last_time = time,
-                        if first_seen_in_tx is True:
+                        if address not in tx_addresses:
                             m_address.num_txns += 1
+                            tx_addresses.add(address)
 
                         if type == TxnoutType.TX_MULTISIG:
                             if m_address.id not in multisig_address_counts:
@@ -368,8 +371,9 @@ class MainchainUpdater(object):
             m_block = self.session.select_block(id=block.height)
             assert m_block is not None
 
-            self.__delete_inputs__(block.height)
-            self.__delete_outputs__(block.height)
+            tx_addresses = set()
+            self.__delete_inputs__(block.height, tx_addresses)
+            self.__delete_outputs__(block.height, tx_addresses)
             self.__delete_transactions__(block.height)
 
             self.session.delete(m_block)
@@ -390,7 +394,7 @@ class MainchainUpdater(object):
             self.session.delete(m_tx)
             self.item_stats.num_transactions += 1
 
-    def __delete_inputs__(self, block_id):
+    def __delete_inputs__(self, block_id, tx_addresses):
         m_inputs = self.session.select_inputs(block_id=block_id)
         assert m_inputs
 
@@ -402,11 +406,20 @@ class MainchainUpdater(object):
                 assert m_address is not None
                 m_address.final_balance += m_prevout.value
 
+            if m_input.output_id > 0:
+                m_addresses = self.session.select_addresses(output_id=m_input.output_id)
+                for m_address in m_addresses:
+                    address_id = m_address.id
+                    first_seen_in_tx = (m_input.tx_id, address_id) not in tx_addresses
+                    if first_seen_in_tx is True:
+                        m_address.num_txns -= 1
+                        assert m_address.num_txns >= 0
+                        tx_addresses.add((m_input.tx_id, address_id))
+
             self.session.delete(m_input)
             self.item_stats.num_inputs += 1
 
-    def __delete_outputs__(self, block_id):
-        tx_addresses = set()
+    def __delete_outputs__(self, block_id, tx_addresses):
         m_addresses_to_delete = []
         m_outputs = self.session.select_outputs(block_id=block_id)
         assert m_outputs
@@ -434,9 +447,8 @@ class MainchainUpdater(object):
                 for address_id in address_ids:
                     m_address = self.session.select_address(id=address_id)
                     assert m_address is not None
-                    address = m_address.address
 
-                    m_blocks = self.session.select_blocks(address=address)
+                    m_blocks = self.session.select_blocks(address_id=address_id)
                     assert m_blocks and m_blocks[-1].id == block_id
 
                     if len(m_blocks) > 1:
@@ -445,11 +457,11 @@ class MainchainUpdater(object):
                         m_address.first_time = 0
                         m_address.last_time = 0
 
-                    first_seen_in_tx = (m_output.tx_id, address) not in tx_addresses
+                    first_seen_in_tx = (m_output.tx_id, address_id) not in tx_addresses
                     if first_seen_in_tx is True:
                         m_address.num_txns -= 1
                         assert m_address.num_txns >= 0
-                        tx_addresses.add((m_output.tx_id, address))
+                        tx_addresses.add((m_output.tx_id, address_id))
 
                     if type != TxnoutType.TX_MULTISIG:
                         m_address.total_received -= m_output.value
