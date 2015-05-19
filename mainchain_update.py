@@ -33,6 +33,9 @@ from mainchain_session import MainchainSession
 
 
 LOCK_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "mainchain_update.lock")
+COINBASE_ADDRESS_ID = 0 # address id to represent where newly generated coins gets sent from
+UNKOWN_ADDRESS_ID = -10 # address id to encompass all unidentifiable addresses. ex: from TxnoutType.TX_NULL_DATA
+
 def is_process_running():
     print "Check lock file", LOCK_FILE
     return os.path.exists(LOCK_FILE)
@@ -241,7 +244,7 @@ class MainchainUpdater(object):
             if tx.is_coinbase():
                 output_id = -1
                 type=255
-                address_id = -2
+                address_id = COINBASE_ADDRESS_ID
                 value = 0
             else:
                 m_output = self.session.select_output(
@@ -288,7 +291,7 @@ class MainchainUpdater(object):
 
             if type == TxnoutType.TX_NONSTANDARD or \
                type == TxnoutType.TX_NULL_DATA:
-                address_id = -1
+                address_id = UNKOWN_ADDRESS_ID
             else:
                 addresses = txout.script_pubkey.addresses
                 # It is possible for a mutlisig tx to not have address list.
@@ -331,7 +334,7 @@ class MainchainUpdater(object):
                         address_id = m_address.id
 
                 if type == TxnoutType.TX_MULTISIG:
-                    address_id = -1
+                    address_id = UNKOWN_ADDRESS_ID
 
             for id, count in multisig_address_counts.iteritems():
                 m_outputs_address = MOutputsAddress(
@@ -351,7 +354,7 @@ class MainchainUpdater(object):
                 offset=offset,
                 spent=False)
 
-            if address_id != -1:
+            if address_id != UNKOWN_ADDRESS_ID:
                 m_output.address_first_used = address_first_used
 
             self.session.add(m_output)
