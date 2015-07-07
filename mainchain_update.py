@@ -297,7 +297,10 @@ class MainchainUpdater(object):
                 # It is possible for a mutlisig tx to not have address list.
                 # Take tx da921e34ee8cc15e8daca3cc413c951c3da66f49015bd577ca4db4625d5a4d53 for example,
                 # the second output is multisig but it's purpose is to store data
-                assert type == TxnoutType.TX_MULTISIG or isinstance(addresses, list)
+
+                # It is possible for pubkey outputs to not contain an address list
+                # See 90c236b3ccaf0d06a07714e78b83ebceaaf43cb704768ea100c92d7f3b8af729 for example
+                assert type == TxnoutType.TX_PUBKEY or type == TxnoutType.TX_MULTISIG or isinstance(addresses, list)
 
                 if isinstance(addresses, list):
                     for address in addresses:
@@ -334,6 +337,9 @@ class MainchainUpdater(object):
                         address_id = m_address.id
 
                 if type == TxnoutType.TX_MULTISIG:
+                    address_id = UNKOWN_ADDRESS_ID
+
+                if type == TxnoutType.TX_PUBKEY and !isinstance(addresses, list):
                     address_id = UNKOWN_ADDRESS_ID
 
             for id, count in multisig_address_counts.iteritems():
