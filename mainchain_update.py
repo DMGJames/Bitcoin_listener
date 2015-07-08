@@ -339,7 +339,7 @@ class MainchainUpdater(object):
                 if type == TxnoutType.TX_MULTISIG:
                     address_id = UNKOWN_ADDRESS_ID
 
-                if type == TxnoutType.TX_PUBKEY and !isinstance(addresses, list):
+                if type == TxnoutType.TX_PUBKEY and isinstance(addresses, list) == False:
                     address_id = UNKOWN_ADDRESS_ID
 
             for id, count in multisig_address_counts.iteritems():
