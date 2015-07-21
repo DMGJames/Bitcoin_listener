@@ -67,9 +67,6 @@ class BitcoinClientWrapper(object):
     }
     """
     def __create_block__(self, data):
-        if "nextblockhash" not in data:
-            raise NextBlockHashNotReady
-
         return Block(
             version=data["version"],
             hash_prev_block=data.get("previousblockhash"),
@@ -81,8 +78,7 @@ class BitcoinClientWrapper(object):
             height=data["height"],
             confirmations=data["confirmations"],
             vtx=data["vtx"],
-            difficulty=data["difficulty"],
-            hash_next_block=data["nextblockhash"])
+            difficulty=data["difficulty"])
 
     """
     Input JSON example:
