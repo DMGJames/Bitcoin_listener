@@ -91,6 +91,7 @@ class MainchainUpdater(object):
 
         self.item_stats = ItemStats()
         self.is_dotting = False
+        self.start_time = get_epoch_time()
 
     def __register_signals__(self):
         uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
@@ -506,6 +507,7 @@ class MainchainUpdater(object):
 
     def __commit__(self):
         self.__print_item_stats__()
+        stdout.write("Finished in " + str(get_epoch_time()-self.start_time) + " seconds\n")
         stdout.write("Committing...")
         self.is_dotting = True
         self.session.commit()
