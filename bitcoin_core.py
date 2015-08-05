@@ -118,4 +118,3 @@ class Block(BlockHeader):
         self.confirmations = kwargs.get("confirmations")
         self.vtx = kwargs.get("vtx")
         self.difficulty = kwargs.get("difficulty")
-        self.hash_next_block = kwargs.get("hash_next_block")
