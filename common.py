@@ -9,6 +9,25 @@ import ConfigParser
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import time, calendar
+from datetime import datetime
+
+old_stdout = sys.stdout
+class StdoutWithTimestamp:
+    nl = True
+
+    def write(self, x):
+        if self.nl == True:
+            old_stdout.write('%s %s' % (str(datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")), x))
+        else:
+            old_stdout.write(x)
+
+        if x.endswith('\n'):
+            self.nl = True
+        else:
+            self.nl = False
+
+sys.stdout = StdoutWithTimestamp()
+
 
 def set_session(env_setting='local'):    
     # 2. Load db config
