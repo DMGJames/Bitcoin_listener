@@ -91,7 +91,6 @@ class MainchainUpdater(object):
 
         self.item_stats = ItemStats()
         self.is_dotting = False
-        self.start_time = get_epoch_time()
 
     def __register_signals__(self):
         uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
@@ -192,6 +191,7 @@ class MainchainUpdater(object):
             self.__insert_block__(block)
 
     def __insert_block__(self, block):
+        self.start_time = get_epoch_time()
         self.__reset_item_stats__()
         self.__set_current_ids__()
         print "Inserting block {}:{}...".format(block.height, block.hash)
@@ -215,6 +215,7 @@ class MainchainUpdater(object):
         finally:
             self.session.close()
             self.__reset_item_stats__()
+            sys.stdout.write("Elapsed time: " + str(get_epoch_time()-self.start_time) + " seconds\n")
 
     def __insert_transactions__(self, block, received_time):
         for tx in block.vtx:
@@ -369,6 +370,7 @@ class MainchainUpdater(object):
             self.current_output_id += 1
 
     def __delete_blocks__(self, blocks):
+        self.start_time = get_epoch_time()
         for block in blocks:
             self.__delete_block__(block)
 
@@ -395,6 +397,7 @@ class MainchainUpdater(object):
         finally:
             self.session.close()
             self.__reset_item_stats__()
+            sys.stdout.write("Elapsed time: " + str(get_epoch_time()-self.start_time) + " seconds\n")
 
     def __delete_transactions__(self, block_id):
         m_txes = self.session.select_transactions(block_id=block_id)
@@ -507,15 +510,14 @@ class MainchainUpdater(object):
 
     def __commit__(self):
         self.__print_item_stats__()
-        stdout.write("Finished in " + str(get_epoch_time()-self.start_time) + " seconds\n")
-        stdout.write("Committing...")
+        sys.stdout.write("Committing...")
         self.is_dotting = True
         self.session.commit()
-        stdout.write(" Done\n")
+        sys.stdout.write(" Done\n")
         self.is_dotting = False
 
     def __print_block_rollbacked__(self, block):
-        if self.is_dotting is True: stdout.write(" Failed\n")
+        if self.is_dotting is True: sys.stdout.write(" Failed\n")
         print "Rolled back block {}:{}".format(block.height, block.hash)
 
     def __is_duplicate_transaction__(self, height, txid):
