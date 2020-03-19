@@ -21,7 +21,8 @@ script_location = alembic
 # sourceless = false
 
 # Prod
-sqlalchemy.url = mysql://root:cruRahu8AbR4@listener.c8eprt6fzs4m.us-west-2.rds.amazonaws.com:3306/listener
+
+#sqlalchemy.url = mysql://root:yEDSyyRidTnBtfXi@listeneror.ccxgyalxyal4.us-west-2.rds.amazonaws.com:3306/listener
 
 # Logging configuration
 [loggers]

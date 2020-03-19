@@ -111,6 +111,9 @@ class MainchainUpdater(object):
             pass
 
     def run(self, count):
+        # comment or uncomment next 2 lines to fix orphan
+        #with session.no_autoflush:
+        #    self.__delete_block_height__(499403) # fix when a block was orphaned
         tip = self.session.select_tip()
         if tip is None:
             print "Main chain does not exist"
@@ -221,6 +224,10 @@ class MainchainUpdater(object):
         for tx in block.vtx:
             if self.__is_duplicate_transaction__(block.height, tx.hash):
                 continue
+            
+            if self.current_tx_id % 200 == 0:
+                print "Inserting transaction {}...".format(self.current_tx_id)
+                stdout.flush()
 
             m_tx = MTransaction(
                 id=self.current_tx_id,
@@ -398,6 +405,32 @@ class MainchainUpdater(object):
             self.session.close()
             self.__reset_item_stats__()
             sys.stdout.write("Elapsed time: " + str(get_epoch_time()-self.start_time) + " seconds\n")
+
+
+    def __delete_block_height__(self, height):
+        self.__reset_item_stats__()
+        print "Deleting block {}".format(height)
+        stdout.flush()
+ 
+        try:
+            m_block = self.session.select_block(id=height)
+            assert m_block is not None
+ 
+            tx_addresses = set()
+            self.__delete_inputs__(height, tx_addresses)
+            self.__delete_outputs__(height, tx_addresses)
+            self.__delete_transactions__(height)
+ 
+            self.session.delete(m_block)
+            self.item_stats.num_blocks += 1
+            self.__commit__()
+        except:
+            raise
+        finally:
+            self.session.close()
+            self.__reset_item_stats__()
+            sys.stdout.write("Block deleted")
+
 
     def __delete_transactions__(self, block_id):
         m_txes = self.session.select_transactions(block_id=block_id)
